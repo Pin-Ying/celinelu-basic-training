@@ -5,7 +5,9 @@
 - 熟悉操作方式
     - 快捷鍵(Pycharm)：
         - Setting：ctrl+alt+s
+        - 瀏覽近期檔案：ctrl+e
         - 複製(若沒選擇字串則為一整行)：ctrl+c
+        - 複製並貼上該行：ctrl+d
         - 還原：ctrl+z
         - 重做：ctrl+shift+z
         - 刪除當前行(重做)：ctrl+y
@@ -13,7 +15,6 @@
         - 縮排->：tab
         - 縮排<-：shift+tab
         - 重新命名(包括檔案、變數、方法)：shift+f6
-        - 部分快捷鍵在後續作答中
 
 - 執行程式的方式(一般執行)
     - 預設快捷鍵：shift+f10
@@ -47,7 +48,8 @@
 
 - 虛擬環境操作
     - 虛擬環境：
-        - 獨立的環境下，讓各專案在開發時套件獨立而互不衝突
+        - What? =>
+        - Why? => 獨立的環境下，讓各專案在開發時套件獨立而互不衝突
 
     - 如何確認當前所在的虛擬環境為何?
         - 在虛擬環境 activate 的情況下，終端上會在當下目錄前提示目前所在的虛擬環境：(VENV_NAME)
@@ -65,28 +67,28 @@
 - python基本練習
     - 如何執行一隻 python 程式
         - 從終端接收要求，決定要執行哪支程式(e.g. 透過命令列下指令：> python3 file.py)
-        - Python 直譯器(interpreter)接手 => 負責翻譯 Python 腳本(.py檔案)，將內容轉換為位元組碼(Byte Code)
+        - 進到 Python 直譯器(interpreter) => 負責翻譯 Python 腳本(.py檔案)，將內容轉換為位元組碼(Byte Code)
             - Byte Code：執行過渡期產生的 Code，因其方便轉換，能跨平台、系統對接，省去重複編譯的步驟
-        - Virtual Machine接手 => 負責將接收的 Byte Code 解析成 Machine Code, Executable Code
+        - 進到 Virtual Machine => 負責將接收的 Byte Code 解析成 Machine Code, Executable Code
         - 觸發 CPU 和其他系統去執行任務
 
     - 資料結構
         - Set
             - What? => 無序、不允許重複元素的資料結構
-            - Why? => 當需求為資料種類，且與資料次序、資料量無關時使用
-            - How?
+            - When? => 當只需保留資料種類，且與資料次序無關時使用
+            - Where? =>
         - List (*Comprehension)
             - What? => 有序、可變、可重複元素的資料結構
-            - Why? => 當需求需保留資料次序時使用
-            - How?
+            - When? => 當需保留以資料次序作為索引的資料集合，且資料需保留修改的靈活度時使用
+            - Where? =>
         - Tuple
-            - What? => 有序、不可變的資料結構
-            - Why?
-            - How?
+            - What? => 有序、不可變、可重複元素的資料結構
+            - When? => 當需保留以資料次序作為索引的資料集合，且無修改資料需求時使用
+            - Where? =>
         - Dictionary(*Comprehension)
-            - What? => 無序、鍵值對應、可辨的資料結構
-            - Why?
-            - How?
+            - What? => 無序、可變、鍵值對應的資料結構
+            - When? => 當處理資料中具非資料次序之索引資料(key)，需保留其索引關係時使用
+            - Where? =>
 
     - function
         - Positional Arguments(*args) 與 Keyword Arguments(**kwargs)

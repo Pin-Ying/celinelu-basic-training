@@ -51,7 +51,7 @@
             - Step Into My Code：與 Step Into 差異在不會進入函式庫(當遇到在函式庫的方法時不會進入)，只會停留在自己的程式碼中
         - Step Out：當目前正在方法 Reference 中時，跳出方法並回到該方法被執行那行
 
-    - Threads & Variables
+    - Threads & Variables (官方圖中的第4、3項)
         - Threads => 執行續，在這裡會根據選擇的執行續，顯示執行續正暫停在程式碼的哪個區域位置
         - Variables => 變數，在這裡會根據選擇的執行續與區域位置，顯示該區域的變數
             - Evaluate expression (Enter)：根據輸入的表達式(e.g. 一個變數)回應 Result
@@ -65,7 +65,7 @@
         - Line Breakpoints：程式抵達到該行時暫停，在 Pycharm 中可以額外設定啟用條件(Condition)
         - Exception Breakpoints：程式丟出特定例外時暫停，可以此得知錯誤當下的資料狀態和鄰近的程式碼
 
-> ![breakpoint.png](img/breakpoint.png)
+  > ![breakpoint.png](img/breakpoint.png)
 
 - 設定執行參數
     - What? => 執行程式時，隨著執行指令一同傳入的額外資訊
@@ -86,12 +86,13 @@
 
 - 虛擬環境操作
     - 虛擬環境：
-        - What? =>
-        - Why? => 獨立的環境下，讓各專案在開發時套件獨立而互不衝突
+        - What? => 獨立的開發環境，隔離不同專案
+        - Why? => 讓每個專案可以擁有自己的python版本和個別所需的套件，在開發時套件互不衝突
 
     - 如何確認當前所在的虛擬環境為何?
         - 在虛擬環境 activate 的情況下，終端上會在當下目錄前提示目前所在的虛擬環境：(VENV_NAME)
-  > ![terminal-venv.png](img/terminal-venv.png)
+          => ![terminal-venv.png](img/terminal-venv.png)
+        - 從設定 -> Project -> Python Interpreter 可以查看當前的專案環境下的 environment manager 與安裝套件
 
     - requirements.txt 的意義為何，如何建立與使用
         - What? => 紀錄該 Python 專案需要的套件之文字檔
@@ -110,31 +111,71 @@
         - 進到 Virtual Machine => 負責將接收的 Byte Code 解析成 Machine Code, Executable Code
         - 觸發 CPU 和其他系統去執行任務
 
-    - 資料結構
+    - 資料結構(PythonTest)
         - Set
-            - What? => 無序、不允許重複元素的資料結構
-            - When? => 當只需保留資料種類，且與資料次序無關時使用
-            - Where? =>
+            - What? => 無序、元素唯一(未索引)的資料結構
+            - Why? => 當僅需保留資料類別(分類)，且無需索引資料時適合使用，e.g. 從一張圖片中篩出有哪幾種顏色
+            - How? => {'color1','color2','color3'...}
         - List (*Comprehension)
             - What? => 有序、可變、可重複元素的資料結構
-            - When? => 當需保留以資料次序作為索引的資料集合，且資料需保留修改的靈活度時使用
-            - Where? =>
+            - Why? => 當需保留以資料次序作為索引的資料集合，且資料需保留修改的靈活度時適合使用，e.g. 紀錄一張圖某段位置的顏色，並可以修改
+            - How? => ['color1','color2','color3','color1'...]
         - Tuple
             - What? => 有序、不可變、可重複元素的資料結構
-            - When? => 當需保留以資料次序作為索引的資料集合，且無修改資料需求時使用
-            - Where? =>
+            - Why? => 當需保留以資料次序作為索引的資料集合，且無修改資料需求時適合使用，e.g. 快速儲存一張圖每個位置的顏色
+            - How? => ('color1','color2','color3','color1'...)
         - Dictionary(*Comprehension)
-            - What? => 無序、可變、鍵值對應的資料結構
-            - When? => 當處理資料中具非資料次序之索引資料(key)，需保留其索引關係時使用
-            - Where? =>
+            - What? => 無序、可變、鍵值對應且鍵唯一的複合型資料結構
+            - Why? => 當需將標籤資料(key)與其他資料(value)相關聯，以方便後續重新取得資料時適合使用，e.g. 紀錄一張圖某個位置是什麼顏色
+            - How? => {'point1': 'color1', 'point2': 'color1', 'point3': 'color2', 'point4': 'color3'}
 
     - function
         - Positional Arguments(*args) 與 Keyword Arguments(**kwargs)
+            - 位置引數（Positional Arguments）
+                - 沒有指定名稱的引數，會根據傳入位置分配給相對應位置的參數
+            - 關鍵字引數（Keyword Arguments）
+                - 指定名稱的引數，會根據名稱分配給相同名稱的參數
+            - 如同函式語法「無預設值的參數需設定在具預設值的參數之前」，引數傳入時「位置引數需放在關鍵字引數的之前」
+                - 原因：會出現很複雜的「該分配給誰」的問題
+                - e.g. 當引數數量不足以分配給所有參數時，有預設值的參數被設定在沒有預設值的參數之前
+                - e.g. 當前面的關鍵字引數已經將參數帶入，卻發現該參數相同的位置上有位置引數
+            - 可變長度參數：不定長度的位置參數(*args)與關鍵字參數(**kwargs)
+                - 當函數中有可能遇到需要傳「不固定數目」的參數值時使用，會在所有預設參數皆分配到引數後收集剩下的引數
+                - *args：將收集到的 Positional Arguments 收集，以 Tuple 的方式保留
+                - **kwargs：將收集到的 Keyword Arguments 收集，並以 Dict 的方式保留指定名稱(key)與值
         - return 與 yield
+            - return：在指定的位置停下函數 => 最終的回應是一個點
+            - yield：在指定的位置停下函數後，紀錄後再從前一次的斷點繼續執行 => 最終的回應是一段過程(generator object)
+
         - Type Hints
+        -
 
     - Package及Module
         - 如何引用套件與使用套件
         - `if __name__ == '__main__'`的意義為何
 
     - 環境變數如何設定與讀取(從IDE、python-dotenv設定)
+- python延伸練習
+    - logging
+        - 層級與意義
+        - 如何輸出至console
+        - 如何輸出至file
+    - 命名規則（提示：字體大小寫、使用的詞性之類的）
+        - Package
+        - Module
+        - Class
+        - Function
+        - Variable
+    - 延伸閱讀
+
+### git
+
+- 什麼是git
+- 如何建立git repository
+    - 全新的專案
+    - 已經有使用git版控的專案
+- `.gitignore`的意義
+- 如何進行提交(commit)
+- 檔案還原
+- 如何切換branch
+- 何為衝突(conflict)

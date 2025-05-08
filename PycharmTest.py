@@ -15,11 +15,6 @@ print(os.getenv('VN_NAME'))
 
 
 ### Debug
-# Run to cursor => Continues the execution until the position of the caret is reached.
-# Step into => Enters the method to show what happens inside it.
-# Step over => Steps over the current line of code and takes you to the next line even if the highlighted line has method calls in it.
-# Step out => Steps out of the current method and takes you to the caller method.
-
 def test_function(test_x, test_y):
     # 藉由 Step into 進入這行，Step into, Step over 都會跳到下一行， Step out 會跳回 z = test_function(x, y)
     num = test_x + test_y

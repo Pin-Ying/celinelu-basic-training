@@ -1,0 +1,6 @@
+DEBUG:root:Hello Debug
+INFO:root:Hello info
+WARNING:root:Hello WARNING
+ERROR:root:Hello ERROR
+CRITICAL:root:Hello CRITICAL
+ERROR:root:Catch an exception.

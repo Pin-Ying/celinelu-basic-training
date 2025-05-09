@@ -72,7 +72,7 @@
     - Why? => 接收從外部傳入的資料，根據條件不同進行不同的處理，增加程式使用靈活度
     - How? => 從 Run 的面板中，Modify Run Configuration 可以進行設定(如下圖)
   > ![modify-run-configuration.png](img/modify-run-configuration.png)
-  > ![run-configuration.png](img/run-configuration.png)
+  > ![run-configuration-setting-para.png](img/run-configuration-setting-para.png)
 
 - 快速尋找方法或參數的「源頭」或是「有哪些方法在使用」
     - 源頭：將輸入標放在要查詢的方法、參數上，點擊預設快捷鍵：ctrl+b，會自動跳到該項目的源頭位置
@@ -87,7 +87,9 @@
 - 虛擬環境操作
     - 虛擬環境：
         - What? => 獨立的開發環境，隔離不同專案
-        - Why? => 讓每個專案可以擁有自己的python版本和個別所需的套件，在開發時套件互不衝突
+        - Why? =>
+            1. 讓每個專案可以擁有自己的python版本和個別所需的套件，在開發時套件互不衝突
+            2. 減少專案的轉移的成本(環境控管，轉移時更方便)
 
     - 如何確認當前所在的虛擬環境為何?
         - 在虛擬環境 activate 的情況下，終端上會在當下目錄前提示目前所在的虛擬環境：(VENV_NAME)
@@ -106,15 +108,17 @@
 - python基本練習
     - 如何執行一隻 python 程式
         - 從終端接收要求，決定要執行哪支程式(e.g. 透過命令列下指令：> python3 file.py)
+            - 要求中包含：1.要用哪個 Python 直譯器(python3), 2.要跑哪個 Python 程式碼(file.py), 3.執行參數
+            - IDE 透過 Run Configuration 去設定每一個腳本所使用的直譯器
+          > ![run-configuration-setting-interpreter.png](img/run-configuration-setting-interpreter.png)
         - 進到 Python 直譯器(interpreter) => 負責翻譯 Python 腳本(.py檔案)，將內容轉換為位元組碼(Byte Code)
             - Byte Code：執行過渡期產生的 Code，因其方便轉換，能跨平台、系統對接，省去重複編譯的步驟
-        - 進到 Virtual Machine => 負責將接收的 Byte Code 解析成 Machine Code, Executable Code
         - 觸發 CPU 和其他系統去執行任務
 
     - 資料結構(PythonTest)
         - Set
             - What? => 無序、元素唯一(未索引)的資料結構
-            - Why? => 當僅需保留資料類別(分類)，且無需索引資料時適合使用，e.g. 從一張圖片中篩出有哪幾種顏色
+            - Why? => 當需快速得到不重複資料(取得類別)時適合使用，e.g. 從一張圖片中篩出有哪幾種顏色
             - How? => {'color1','color2','color3'...}
         - List (*Comprehension)
             - What? => 有序、可變、可重複元素的資料結構
@@ -144,38 +148,114 @@
                 - *args：將收集到的 Positional Arguments 收集，以 Tuple 的方式保留
                 - **kwargs：將收集到的 Keyword Arguments 收集，並以 Dict 的方式保留指定名稱(key)與值
         - return 與 yield
-            - return：在指定的位置停下函數 => 最終的回應是一個點
-            - yield：在指定的位置停下函數後，紀錄後再從前一次的斷點繼續執行 => 最終的回應是一段過程(generator object)
-
+            - return：
+                - What? => 在return位置終止函數 => 最終回傳一個點
+                - When? => 當該方法結束的條件已被明確定義時
+                - e.g. A方法中使用到迴圈累積資料，並且其他方法呼叫A方法時會直接處理整個資料(無須二次篩選)
+            - yield：
+                - What? => 在yield的位置「暫停」函數，紀錄後可再從前一次的斷點繼續執行，或選擇終止迭代 => 最終回傳一段過程(
+                  generator object)
+                - When? => 當該方法結束的條件與方法外的因素相關聯時
+                - e.g. A方法中使用到迴圈累積資料，但其他方法呼叫A方法時，可能不會使用到整個迴圈的資料(
+                  其他方法擁有各自的條件判斷)
+                  ，為提升效能(不用每次都跑完A方法的迴圈)可以使用 yield
         - Type Hints
-        -
+            - What? => 用於提示函數輸入及輸出資料型態的註釋
+                - 不影響程式碼運行，Python interpreter 會完全忽略 Type Hint
+            - Why? => 增加該函數的使用方便性、可讀性及可維護性
+            - How?
+                - 輸入參數 "parameter: type"，輸出參數 "-> type"
+                - e.g. def add_numbers(x: int, y: float) -> float
+            - mypy：
+                - 靜態類型檢查工具，協助檢查使用的方法型態是否符合 Type Hint 的註釋
+      > ![mypy-result.png](img/mypy-result.png)
 
     - Package及Module
+        - 模組(Module)：包含函式(Function)與類別(Class)的 Python file，目的為集中相關性較高的功能
+        - 套件(Package)：包含了一個或多個的 Module 的資料夾，目的為整合與規劃 Module
         - 如何引用套件與使用套件
-        - `if __name__ == '__main__'`的意義為何
-
+            - 將套件加入專案環境中(.venv -> Lib -> site-packages) => 可以使用 pip 安裝、升級和卸載 Python 套件
+            - import：搜尋指定的模組(會去搜尋系統預設的 library路徑、當前的執行位置)，將找到的模組建立變數記錄下來，並執行每一行程式碼
+            - 使用時根據 import 的名稱與範圍，一層層從 Package -> Module -> Function, Class, Variable 去呼叫需要的內容
+        - `if __name__ == '__main__'`的意義為何：
+            - __name__ 為模組名稱，當模組為直接被執行時為'__main__'，當被 import 進其他腳本時會被設定為模組檔名
+            - 用於判斷當次執行時該模組是被引入的或直接被運行
+            - 可藉此控制「哪些程式碼是外部在載入此腳本時不需執行的」，例如：用於測試、Debug 的程式碼
     - 環境變數如何設定與讀取(從IDE、python-dotenv設定)
+        - 將環境變數存儲在 .env 檔案中 => 避免將敏感資訊硬編碼在程式碼裡(e.g. API 金鑰、資料庫連線資訊)
+        - IDE
+            - 從 Run Configuration 可以直接設定環境變數，或取得 .env 檔案的路徑
+            - ![run-configuration-setting-env.png](img/run-configuration-setting-env.png)
+        - dotenv
+            - load_dotenv(dotenv_path => .env檔案路徑) 方法載入 .env
+        - 讀取：os.getenv("欲抓取的參數")
+
+
 - python延伸練習
     - logging
         - 層級與意義
+            - 六個level，包含：NOTSET、DEBUG、INFO、WARNING、ERROR、CRITICAL，依據訊息嚴重程度輕到高排列
+            - logging.basicConfig(level => 設定欲輸出的最低層級)
+            - 透過調控輸出的最低層級，可以針對不同的開發階段顯示需要的資訊，初期開發用Debug level，後期產品要上線時就可以直接設定
+              WARNING level ，而不需從程式碼內部刪除
         - 如何輸出至console
+            - logging.debug('Hello Debug')
+            - logging.info('Hello info')
+            - logging.warning('Hello WARNING')
+            - logging.error('Hello ERROR')
+            - logging.critical('Hello CRITICAL')
         - 如何輸出至file
+            - logging.basicConfig(filename => 設定要儲存的日誌檔名, filemode => 設定儲存方式('a' -> append, 'w' ->
+              write))
     - 命名規則（提示：字體大小寫、使用的詞性之類的）
-        - Package
-        - Module
-        - Class
-        - Function
-        - Variable
-    - 延伸閱讀
+        - Package 全小寫，文字串接的時候使用下底線（Snake Case）
+        - Module 全小寫（Snake Case）
+        - Class 開頭第一個單字大寫，其餘小寫，文字串接不使用下底線（Camel Case）
+        - Function 全小寫（Snake Case）
+        - Variable（Snake Case）
+            - Local 全小寫、Globals 全大寫、常數全大寫
+    - 延伸閱讀 Python的Coding Style: PEP8
+      - 
 
 ### git
 
 - 什麼是git
+    - 版本控管工具，控制與紀錄開發過程中不同版本的程式碼「快照」
+    - 工作區 -> 暫存區 -> 儲存區.git directory(Repository)
+
+> ![storing-data-as-snapshots-of-the-project-over-time.png](img/storing-data-as-snapshots-of-the-project-over-time.png)
+
 - 如何建立git repository
     - 全新的專案
+        - 本地端：git init => 創建.git directory
+        - 雲端：Github
+      > ![Github.png](img/Github.png)
+
     - 已經有使用git版控的專案
-- `.gitignore`的意義
+        - 將該專案從本地->雲端
+            - git remote
+            - git push
+        - 從雲端->本地端
+            - git clone
+
+- `.gitignore`的意義 => 紀錄專案中可被git無視的檔案(不需被控管、不會隨專案版本變化)
+    - 與專案開發無直接關係 e.g. 中間檔、暫存檔
+    - 較機密的檔案 e.g. 金鑰
+
 - 如何進行提交(commit)
+    - git add <追蹤欲提交的檔案> => 將有變更(包括新增、刪除)的檔案追蹤，將會移置暫存區
+    - git commit -m "message，本次提交做了些什麼更動" => 將暫存區的檔案提交到儲存區(repository)
+
 - 檔案還原
+    - git restore <欲恢復的檔案名> => 將檔案恢復到當前提交的狀態
+    - git restore --source=<指定提交> <欲恢復的檔案名>  => 將檔案恢復到指定提交的狀態
+    -
 - 如何切換branch
+    - git branch => 查看當前有哪些分支，以及正在哪個分支
+        - git branch <新建立分支的名稱>
+    - git checkout <想要切換的分支>
+    - git checkout -b <新建立分支的名稱並切換到該分支>
 - 何為衝突(conflict)
+    - 當兩版本在合併(merge)時，如果剛好在同一個檔案中皆有修改，Git無法判斷應保留哪個版本，同時無法自動將兩個版本合併(e.g.
+      改到同一行程式碼)
+    - 發生衝突時，Git會在該檔案中保留衝突的區段，將兩份檔案不同的地方標示出來，只要將檔案標示的修改完成後，重新提交即可解決衝突

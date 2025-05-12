@@ -5,13 +5,13 @@ test_parser = argparse.ArgumentParser()
 test_parser.add_argument("--x", type=int)
 test_args = test_parser.parse_args()
 # print 結果：1
-print(test_args.x)
+print(f"test_args.x: {test_args.x}")
 
 # 環境變數設置： VN_NAME=CoolBox
 import os
 
 # print 結果：CoolBox
-print(os.getenv('VN_NAME'))
+print(f"os.getenv('VN_NAME'): {os.getenv('VN_NAME')}")
 
 
 ### Debug
@@ -35,16 +35,20 @@ z2 = test_function(num_x, num_y)
 ### Breakpoint
 # 於下方 print(num_y) 該行設定 Line Breakpoint 的 Condition：y==2
 # 結果：Resume Program 時會停下
-print(num_y)
+print(f"num_y: {num_y}")
 
 num_y = 3
 # 於下方 print(num_y) 該行設定 Line Breakpoint 的 Condition：y==2
 # 結果：Resume Program 時會直接跳過該點，因條件不符該點無啟用
-print(num_y)
+print(f"num_y: {num_y}")
 
 # 在 Python Exception Breakpoint 設置 ZeroDivisionError，並勾起 Log 中的 "Breakpoint hit" message
 # Debug 結果：
 # ZeroDivisionError: division by zero
 # Breakpoint reached: ZeroDivisionError
 # python-ZeroDivisionError
+# try:
+#     z3 = num_x / 0
+# except ZeroDivisionError:
+#     print("ZeroDivisionError")
 z3 = num_x / 0

@@ -1,0 +1,2 @@
+
+### 新人教育訓練： [FIRST_TRAINING.md](FIRST_TRAINING.md)

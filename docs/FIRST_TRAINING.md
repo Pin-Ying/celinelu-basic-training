@@ -3,11 +3,11 @@ _### Pycharm(IDE)
 - 熟悉操作方式
     - 建立新 Python 專案 => File -> New Project
         - Interpreter type => 主要差異為 environment manager (conda, poetry...等等)
-  > ![creat-new-project.png](../img/creat-new-project.png)
+  > ![creat-new-project.png](img/creat-new-project.png)
 
     - 新增檔案(e.g. Python File)
         - 在欲新增檔案的資料夾上右鍵 -> New -> Python File 或其他欲加入的檔案
-  > ![add-new-file.png](../img/add-new-file.png)
+  > ![add-new-file.png](img/add-new-file.png)
 
     - 程式碼編寫
         - 快捷鍵(Pycharm)：
@@ -20,21 +20,21 @@ _### Pycharm(IDE)
 
     - 設定 (預設快捷鍵：ctrl+alt+s) => 與 Pycharm 相關的設定，包括運行專案的環境
         - Project：該專案所處環境設置，包括 Python interpreter、Project Structure
-  > ![setting.png](../img/setting.png)
+  > ![setting.png](img/setting.png)
 
 
 - 執行程式的方式(一般執行) => 一般測試程式時
     - 預設快捷鍵：shift+f10
     - 執行結果將會顯示在 Run 的面板 (預設快捷鍵：alt+4) ，包括程式執行結果、錯誤訊息
-  > ![run.png](../img/run.png)
-  > ![run-result.png](../img/run-result.png)
+  > ![run.png](img/run.png)
+  > ![run-result.png](img/run-result.png)
 
 - 執行程式的方式(偵錯方式) => 當遇到較複雜、不易解決的錯誤時(e.g. 邏輯型錯誤)，針對可能造成錯誤的程式區塊進行測試，以利找到問題的源頭
     - 預設快捷鍵：shift+f9
     - 執行過程中，運行當下的資料內容(變數)將會顯示在 Debug 的面板 (預設快捷鍵：alt+5) 的 Threads & Variables
     -
-  > ![run-debug.png](../img/run-debug.png)
-  > ![run-debug-debugging.png](../img/run-debug-debugging.png)
+  > ![run-debug.png](img/run-debug.png)
+  > ![run-debug-debugging.png](img/run-debug-debugging.png)
     - 下圖借用了 PyCharm 官方文件圖來說明
   > ![debug-window.png](https://resources.jetbrains.com/help/img/idea/2025.1/py_debug_tool_window_dark.png)
 
@@ -53,9 +53,9 @@ _### Pycharm(IDE)
         - Threads => 執行續，在這裡會根據選擇的執行續，顯示執行續正暫停在程式碼的哪個區域位置
         - Variables => 變數，在這裡會根據選擇的執行續與區域位置，顯示該區域的變數
             - Evaluate expression (Enter)：根據輸入的表達式(e.g. 一個變數)回應 Result
-              => ![evaluate-expression.png](../img/evaluate-expression.png)
+              => ![evaluate-expression.png](img/evaluate-expression.png)
             - add a watch (Ctrl+Shift+Enter)：有時程式碼較為複雜，可利用此功能追蹤想知道的內容(表達式)
-              => ![add-a-watch.png](../img/add-a-watch.png)
+              => ![add-a-watch.png](img/add-a-watch.png)
     - breakpoint：
         - What? => 程式執行時「達到特定條件則暫停」的斷點
         - Why? => 目的為檢查與確定程式是否按照設計的邏輯進行
@@ -69,8 +69,8 @@ _### Pycharm(IDE)
     - How?
         - 腳本加入參數：使用 argparse 套件的 add_argument()
         - 設定 IDE 運行時要傳入的參數：從 Modify Run Configuration 可以設定要傳入的參數(如下圖)
-  > ![modify-run-configuration.png](../img/modify-run-configuration.png)
-  > ![run-configuration-setting-para.png](../img/run-configuration-setting-para.png)
+  > ![modify-run-configuration.png](img/modify-run-configuration.png)
+  > ![run-configuration-setting-para.png](img/run-configuration-setting-para.png)
 
 - 快速尋找方法或參數的「源頭」或是「有哪些方法在使用」
     - 源頭：將輸入標放在要查詢的方法、參數上，點擊預設快捷鍵：ctrl+b，會自動跳到該項目的源頭位置
@@ -78,7 +78,7 @@ _### Pycharm(IDE)
 
 - 快速reformat程式碼：預設快捷鍵：ctrl+alt+l，可先將要 reformat 的程式碼選取後再按快捷鍵
     - 可以設定自動於儲存時 reformat
-  > ![reformat-on-save.png](../img/reformat-on-save.png)
+  > ![reformat-on-save.png](img/reformat-on-save.png)
 
 ### Python程式開發
 
@@ -91,7 +91,7 @@ _### Pycharm(IDE)
 
     - 如何確認當前所在的虛擬環境為何?
         - 在虛擬環境 activate 的情況下，終端上會在當下目錄前提示目前所在的虛擬環境：(VENV_NAME)
-          => ![terminal-venv.png](../img/terminal-venv.png)
+          => ![terminal-venv.png](img/terminal-venv.png)
         - 從設定 -> Project -> Python Interpreter 可以查看當前的專案環境下的 environment manager 與安裝套件
 
     - requirements.txt 的意義為何，如何建立與使用
@@ -112,7 +112,7 @@ _### Pycharm(IDE)
         - 從終端接收要求，決定要執行哪支程式(e.g. 透過命令列下指令：> python3 file.py)
             - 要求中包含：1.要用哪個 Python 直譯器(python3), 2.要跑哪個 Python 程式碼(file.py), 3.執行參數
             - IDE 透過 Run Configuration 去設定每一個腳本所使用的直譯器
-          > ![run-configuration-setting-interpreter.png](../img/run-configuration-setting-interpreter.png)
+          > ![run-configuration-setting-interpreter.png](img/run-configuration-setting-interpreter.png)
         - 進到 Python 直譯器(interpreter) => 負責翻譯 Python 腳本(.py檔案)，將內容轉換為位元組碼(Byte Code)
             - Byte Code：執行過渡期產生的 Code，因其方便轉換，能跨平台、系統對接，省去重複編譯的步驟
         - 觸發 CPU 和其他系統去執行任務
@@ -170,7 +170,7 @@ _### Pycharm(IDE)
                 - e.g. def add_numbers(x: int, y: float) -> float
             - mypy：
                 - 靜態類型檢查工具，協助檢查使用的方法型態是否符合 Type Hint 的註釋
-      > ![mypy-result.png](../img/mypy-result.png)
+      > ![mypy-result.png](img/mypy-result.png)
 
     - Package及Module
         - 模組(Module)：包含函式(Function)與類別(Class)的 Python file，目的為集中相關性較高的功能
@@ -189,7 +189,7 @@ _### Pycharm(IDE)
         - How? => 將環境變數存儲在 .env 檔案中 => 避免將敏感資訊硬編碼在程式碼裡(e.g. API 金鑰、資料庫連線資訊)
         - IDE
             - 從 Run Configuration 可以直接設定環境變數，或取得 .env 檔案的路徑
-            - ![run-configuration-setting-env.png](../img/run-configuration-setting-env.png)
+            - ![run-configuration-setting-env.png](img/run-configuration-setting-env.png)
         - dotenv
             - load_dotenv(dotenv_path => .env檔案路徑) 方法載入 .env
         - 讀取：os.getenv("欲抓取的參數")
@@ -228,15 +228,15 @@ _### Pycharm(IDE)
 
 - 什麼是git
     - 版本控管工具，控制與紀錄開發過程中不同版本的程式碼「快照」
-  > ![storing-data-as-snapshots-of-the-project-over-time.png](../img/storing-data-as-snapshots-of-the-project-over-time.png)
+  > ![storing-data-as-snapshots-of-the-project-over-time.png](img/storing-data-as-snapshots-of-the-project-over-time.png)
     - 工作區 \ 暫存區 \ 儲存區.git directory(Repository)
-  > ![git-repository.png](../img/git-repository.png)
+  > ![git-repository.png](img/git-repository.png)
 
 - 如何建立git repository
     - 全新的專案
         - 本地端：git init => 創建.git directory
         - 雲端：Github
-      > ![Github.png](../img/Github.png)
+      > ![Github.png](img/Github.png)
 
     - 已經有使用git版控的專案
         - 將該專案從本地->雲端
@@ -273,4 +273,5 @@ _### Pycharm(IDE)
 - 何為衝突(conflict)
     - 當兩版本在合併(merge)時，如果剛好在同一個檔案中皆有修改，Git無法判斷應保留哪個版本，同時無法自動將兩個版本合併(e.g.
       改到同一行程式碼)
-    - 發生衝突時，Git會在該檔案中保留衝突的區段，將兩份檔案不同的地方標示出來，只要將檔案標示的修改完成後，重新提交即可解決衝突_
+    - 發生衝突時，Git會在該檔案中保留衝突的區段，將兩份檔案不同的地方標示出來，只要將檔案標示的修改完成後，重新提交即可解決衝突
+> ![git-conflict.png](img/git-conflict.png)

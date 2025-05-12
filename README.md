@@ -1,7 +1,5 @@
 ### Pycharm(IDE)
 
-#### 部分功能補充在 PycharmTest.py
-
 - 熟悉操作方式
     - 建立新 Python 專案 => File -> New Project
         - Interpreter type => 主要差異為 environment manager (conda, poetry...等等)
@@ -89,7 +87,7 @@
         - What? => 獨立的開發環境，隔離不同專案
         - Why? =>
             1. 讓每個專案可以擁有自己的python版本和個別所需的套件，在開發時套件互不衝突
-            2. 減少專案的轉移的成本(環境控管，轉移時更方便)
+            2. 減少專案的轉移的成本(環境控管，轉移時更快速，較不易遺漏或搞錯套件版本)
 
     - 如何確認當前所在的虛擬環境為何?
         - 在虛擬環境 activate 的情況下，終端上會在當下目錄前提示目前所在的虛擬環境：(VENV_NAME)
@@ -118,7 +116,7 @@
     - 資料結構(PythonTest)
         - Set
             - What? => 無序、元素唯一(未索引)的資料結構
-            - Why? => 當需快速得到不重複資料(取得類別)時適合使用，e.g. 從一張圖片中篩出有哪幾種顏色
+            - Why? => 當需快速得到不重複資料(取得類別)，並以其做條件篩選時適合使用，e.g. 從一張圖片中篩出有哪幾種顏色，並判斷「紅色」有沒有在該圖片裡
             - How? => {'color1','color2','color3'...}
         - List (*Comprehension)
             - What? => 有序、可變、可重複元素的資料結構
@@ -149,16 +147,15 @@
                 - **kwargs：將收集到的 Keyword Arguments 收集，並以 Dict 的方式保留指定名稱(key)與值
         - return 與 yield
             - return：
-                - What? => 在return位置終止函數 => 最終回傳一個點
+                - What? => 運行函式時在遇到return位置將終止函式 => 最終回傳一個總結
                 - When? => 當該方法結束的條件已被明確定義時
                 - e.g. A方法中使用到迴圈累積資料，並且其他方法呼叫A方法時會直接處理整個資料(無須二次篩選)
             - yield：
-                - What? => 在yield的位置「暫停」函數，紀錄後可再從前一次的斷點繼續執行，或選擇終止迭代 => 最終回傳一段過程(
-                  generator object)
+                - What? => 運行函式時在遇到yield的位置「暫停」函式，紀錄後可再從前一次的暫停點繼續執行(調用next方法)
+                  ，或選擇終止迭代 => 最終回傳一段過程(generator object)
                 - When? => 當該方法結束的條件與方法外的因素相關聯時
                 - e.g. A方法中使用到迴圈累積資料，但其他方法呼叫A方法時，可能不會使用到整個迴圈的資料(
-                  其他方法擁有各自的條件判斷)
-                  ，為提升效能(不用每次都跑完A方法的迴圈)可以使用 yield
+                  其他方法擁有各自的條件判斷)，為提升效能(不用每次都跑完A方法的迴圈)可以使用 yield
         - Type Hints
             - What? => 用於提示函數輸入及輸出資料型態的註釋
                 - 不影響程式碼運行，Python interpreter 會完全忽略 Type Hint
@@ -213,9 +210,10 @@
         - Class 開頭第一個單字大寫，其餘小寫，文字串接不使用下底線（Camel Case）
         - Function 全小寫（Snake Case）
         - Variable（Snake Case）
-            - Local 全小寫、Globals 全大寫、常數全大寫
+        - Local 全小寫、Globals 全大寫、常數全大寫
     - 延伸閱讀 Python的Coding Style: PEP8
-      - 
+        - ![PEP8-weak-warnings-setting.png](img/PEP8-weak-warnings-setting.png)
+        - ![PEP8-weak-warnings.png](img/PEP8-weak-warnings.png)
 
 ### git
 

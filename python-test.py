@@ -1,5 +1,5 @@
-### 資料結構
-### Set
+# 資料結構
+# Set
 the_set = {'A', 'B', 'C'}
 print(f'theSet：{the_set}')
 print('-' * 50)
@@ -11,25 +11,27 @@ the_set.add("orange")
 print(f'theSet.add("orange")：{the_set}')
 print('-' * 50)
 
-# Set.copy()，會 return 一份複製的 Set
-theSecondSet = the_set.copy()
-print(f'theSecondSet = theSet.copy()，theSecondSet：{the_set}')
-print(f'theSecondSet：{theSecondSet}')
-print('-' * 50)
-
 # Set.remove(subject)，將 subject 從 Set 中移除
 the_set.remove("orange")
 print(f'theSet.remove("orange")：{the_set}')
 print('-' * 50)
 
-# Set.clear()，將 Set 清空
-the_set.clear()
-print(f'theSet.clear()：{the_set}')
+# setA.union(setB), setA | setB
+the_set_b = {'A', 'C', 'D'}
+print(f'the_set.union(the_set_b)：{the_set.union(the_set_b)}')
+print('-' * 50)
+
+# setA.intersection(setB), setA & setB
+print(f'the_set.intersection(the_set_b)：{the_set.intersection(the_set_b)}')
+print('-' * 50)
+
+# setA.difference(setB), setA - setB
+print(f'the_set.difference(the_set_b)：{the_set.difference(the_set_b)}')
 print('-' * 50)
 
 print('=' * 50)
 
-### List
+# List
 the_list = ['A', 'B', 'C', 'A', 'B', 'C']
 print(f'theList：{the_list}')
 print('-' * 50)
@@ -91,7 +93,7 @@ print('-' * 50)
 
 print('=' * 50)
 
-### Tuple
+# Tuple
 the_tuple = ('A', 'B', 'C')
 print(f'theTuple：{the_tuple}')
 print('-' * 50)
@@ -108,7 +110,7 @@ print('-' * 50)
 
 print('=' * 50)
 
-### Dictionary
+# Dictionary
 the_dict = {'A': 'a', 'B': 'b', 'C': 'c', 'D': 'd'}
 print(f'theDict：{the_dict}')
 
@@ -117,10 +119,10 @@ print(f'theDict：{the_dict}')
 print(f"theDict['A']：{the_dict['A']}")
 # 若是舊的會改寫
 the_dict['A'] = 'aa'
-print(the_dict['A'])
+print(f"theDict['A']= 'aa'，theDict：{the_dict}")
 # 若是新的會加入
 the_dict['E'] = 'e'
-print(f'theDict<UNK>{the_dict}')
+print(f"the_dict['E'] = 'e'，theDict：{the_dict}")
 
 print('-' * 50)
 
@@ -142,7 +144,8 @@ print('-' * 50)
 print(f"theDict.values()：{the_dict.values()}")
 print('-' * 50)
 
-# Dict.pop(keyname, defaultValue)，移除由 keyname 索引到的 Dict 中的 value，在方法最後 return 被刪除的 value，defaultValue 會在該 key 索引不到 value 時 return
+# Dict.pop(keyname, defaultValue)，移除由 keyname 索引到的 Dict 中的 value，
+# 在方法最後 return 被刪除的 value，defaultValue 會在該 key 索引不到 value 時 return
 print(f'theDict.pop()，removed value：{the_dict.pop('C')}')
 print(f'theDict.pop()，theDict：{the_dict}')
 print('-' * 50)
@@ -155,19 +158,19 @@ print('-' * 50)
 print('=' * 50)
 
 
-### function
-### *arg
+# function
+# *arg
 def arg_function(*subject):
-    print(f'arg_function，subject：{subject}')
+    print(f'arg_function(*subject)，subject：{subject}')
 
 
 arg_function(1, 1, 2, 3)
 arg_function(1, 4)
 
 
-### **kwargs
+# **kwargs
 def kwargs_function(**subject):
-    print(f'kwargs_function，subject：{subject}')
+    print(f'kwargs_function(**subject)，subject：{subject}')
 
 
 kwargs_function(num1=1, num2=2, num3=3)
@@ -175,23 +178,26 @@ kwargs_function(num1=1, num2=2, num3=3, num4=4)
 print('-' * 50)
 
 
-### yield
+# yield
 def yield_test(n):
-    print("start n =", n)
+    print(f'yield_test({n}) start')
     for i in range(n):
-        yield i * i
         print("i =", i)
+        yield i * i
+        # print("i =", i)
 
-    print("end")
+    print(f'yield_test({n}) end')
 
 
-yield_result = yield_test(1)
-print(yield_result)
+# 函數中有yield，所以該函數並不會真的執行，而是先得到一個生成器
+yield_result = yield_test(5)
+print(f'yield_result：{yield_result}')
 for item in yield_result:
-    print(item)
+    print(f'yield_result，item：{item}')
+print('-' * 50)
 
 
-### Type Hint
+# Type Hint
 def say_hi(name: str) -> str:
     return f'Hi {name}'
 
@@ -200,7 +206,7 @@ greeting = say_hi('John')
 # greeting = say_hi(123)
 print(greeting)
 
-### Logging
+# Logging
 import logging
 
 
@@ -222,7 +228,7 @@ def main():
 
 main()
 
-### load_dotenv
+# load_dotenv
 from dotenv import load_dotenv
 import os
 

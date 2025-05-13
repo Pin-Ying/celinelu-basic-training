@@ -2,13 +2,14 @@
 name = "firsttraining"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Celine <celine4231@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.13"
 flask = "^3.1.0"
 python-dotenv = "^1.1.0"
+mypy = "^1.15.0"
 
 
 [build-system]

@@ -15,6 +15,7 @@ print(f'theSet.remove("orange")：{the_set}')
 
 # setA.union(setB), setA | setB
 the_set_b = {'A', 'C', 'D'}
+print(f'the_set_b：{the_set_b}')
 print(f'the_set.union(the_set_b)：{the_set.union(the_set_b)}')
 
 # setA.intersection(setB), setA & setB
@@ -23,31 +24,38 @@ print(f'the_set.intersection(the_set_b)：{the_set.intersection(the_set_b)}')
 # setA.difference(setB), setA - setB
 print(f'the_set.difference(the_set_b)：{the_set.difference(the_set_b)}')
 
+# setA.symmetric_difference(setB), setA ^ setB
+print(f'the_set.symmetric_difference(the_set_b)：{the_set.symmetric_difference(the_set_b)}')
+
 print('=' * 50)
 
 # List
 the_list = ['A', 'B', 'C', 'A', 'B', 'C']
 print(f'theList：{the_list}')
 
-# methods
 # Comprehension
-second_list = [i for i in range(1,11) if i%2==0]
+second_list = [i for i in range(1, 11) if i % 2 == 0]
+print(f'second_list：{second_list}')
+
+print(f"theList[1]：{the_list[1]}")
+print(f"theList[1:3]：{the_list[1:3]}")
+
+# methods
 
 # List.append(subject)，將 subject 從 List 末端加入 theList 中
 the_list.append('Test')
-print(f'theList.append(5566)：{the_list}')
+print(f"theList.append('Test')：{the_list}")
 
 # List.insert(index,subject)，將 subject 從 List[index] 加入 theList 中
 the_list.insert(2, 'Test')
-print(f'theList.insert(2, 5566)：{the_list}')
+print(f"theList.insert(2, 'Test')：{the_list}")
 
 # List.remove(subject)，將 subject 從 theList 中刪除，會從頭開始刪除第一個匹配到的
 the_list.remove('Test')
-print(f'theList.remove(2, 5566)：{the_list}')
+print(f"theList.remove('Test')：{the_list}")
 
 # List.pop(index)， 移除 List 中特定位置的元素，假如沒給定位置，則會移除最後一個元素，該方法最後會 return 被刪除的元素
-print(f'theList.pop()，removed element：{the_list.pop()}')
-print(f'theList.pop()，theList：{the_list}')
+print(f'theList.pop()，removed element：{the_list.pop()}，theList：{the_list}')
 
 # List.reverse()，反轉 List 的順序
 the_list.reverse()
@@ -94,9 +102,13 @@ print('=' * 50)
 
 # Dictionary
 the_dict = {'A': 'a', 'B': 'b', 'C': 'c', 'D': 'd'}
-print(f'theDict：{the_dict}')
 
-# Dict 快速存取值的寫法 => Dic[key]
+# Comprehension
+second_dict = {f"{i}": i for i in range(1, 11) if i % 2 == 0}
+print(f'theDict：{the_dict}')
+print(f'second_dict：{second_dict}')
+
+# Dict 快速存取值的寫法 => Dict[key]
 # 沒有賦值便取出
 print(f"theDict['A']：{the_dict['A']}")
 # 若是舊的會改寫
@@ -111,30 +123,28 @@ print(f"the_dict['E'] = 'e'，theDict：{the_dict}")
 # Dict.get(keyname, defaultValue)，return 由 keyname 索引到的 Dict 中的 value，defaultValue 會在該 keyname 索引不到 value 時 return
 print(f"theDict.get('C')：{the_dict.get('C')}")
 
-# Dict.items()，return 每一個 (key,value) 組成的 List
+# Dict.items()，return 每一個 (key,value) 組成的 dict_item(List)
 print(f"theDict.items()：{the_dict.items()}")
 
-# Dict.keys()，return 每一個 key 組成的 List
+# Dict.keys()，return 每一個 key 組成的 dict_keys(List)
 print(f"theDict.keys()：{the_dict.keys()}")
 
-# Dict.values()，return 每一個 value 組成的 List
+# Dict.values()，return 每一個 value 組成的 dict_values(List)
 print(f"theDict.values()：{the_dict.values()}")
 
 # Dict.pop(keyname, defaultValue)，移除由 keyname 索引到的 Dict 中的 value，
 # 在方法最後 return 被刪除的 value，defaultValue 會在該 key 索引不到 value 時 return
-print(f'theDict.pop()，removed value：{the_dict.pop('C')}')
-print(f'theDict.pop()，theDict：{the_dict}')
+print(f'theDict.pop()，removed value：{the_dict.pop('C')}，theDict：{the_dict}')
 
 # Dict.popitem()，移除最後加入 Dict 的 key/value ，在方法最後 return 被刪除的 value
-print(f'theDict.popitem()，removed value：{the_dict.popitem()}')
-print(f'theDict.popitem()，theDict：{the_dict}')
+print(f'theDict.popitem()，removed value：{the_dict.popitem()}，theDict：{the_dict}')
 
 print('=' * 50)
 
 
 # function
 # *arg
-def arg_function(*subject):
+def arg_function(num1, *subject):
     print(f'arg_function(*subject)，subject：{subject}')
 
 
@@ -143,7 +153,7 @@ arg_function(1, 4)
 
 
 # **kwargs
-def kwargs_function(**subject):
+def kwargs_function(num1,**subject):
     print(f'kwargs_function(**subject)，subject：{subject}')
 
 
@@ -167,6 +177,13 @@ def yield_test(n):
 yield_result = yield_test(5)
 print(f'yield_result：{yield_result}')
 for item in yield_result:
+    print(f'yield_result，item：{item}')
+
+yield_result = yield_test(5)
+print("stop at item == 9")
+for item in yield_result:
+    if item == 9:
+        break
     print(f'yield_result，item：{item}')
 
 print('-' * 50)
@@ -232,4 +249,3 @@ print(f".env")
 print(f"Database URL: {database_url}")
 print(f"API Key: {api_key}")
 print(f"Debug Mode: {debug_mode}")
-

@@ -7,9 +7,13 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.13"
-flask = "^3.1.0"
 python-dotenv = "^1.1.0"
 mypy = "^1.15.0"
+fastapi = {extras = ["standard"], version = "^0.115.12"}
+sqlalchemy = "^2.0.41"
+pydantic = "^2.11.4"
+celery = "^5.5.2"
+docker = "^7.1.0"
 
 
 [build-system]

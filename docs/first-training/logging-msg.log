@@ -1,0 +1,11 @@
+DEBUG:root:Hello Debug
+INFO:root:Hello info
+WARNING:root:Hello WARNING
+ERROR:root:Hello ERROR
+CRITICAL:root:Hello CRITICAL
+ERROR:root:Catch an exception.
+Traceback (most recent call last):
+  File "C:\Users\celinelu\Desktop\training\python-test.py", line 229, in logging_method
+    llllllllogging.debug('Hello Debug')
+    ^^^^^^^^^^^^^^
+NameError: name 'llllllllogging' is not defined

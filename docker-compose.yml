@@ -1,19 +1,28 @@
-version: '3.1'
-
 services:
   mariadb:
-    image: mariadb:latest
+    image: mariadb:10.11
     container_name: mariadb
     restart: always
     environment:
-      MARIADB_ROOT_PASSWORD: my-secret-pw
-      MARIADB_DATABASE: mydb
-      MARIADB_USER: myuser
-      MARIADB_PASSWORD: mypassword
+      MYSQL_ROOT_PASSWORD: rootpass123456
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: celine
+      MYSQL_PASSWORD: celine123456
     ports:
       - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mariadb
+    depends_on:
+      - mariadb
 
 volumes:
   mariadb_data:

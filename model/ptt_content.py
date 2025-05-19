@@ -1,13 +1,12 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship, declarative_base
+from db.database import  Base
 from datetime import datetime
-
-Base = declarative_base()
 
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    username = Column(String, unique=True, nullable=False)
+    name = Column(String, unique=True, nullable=False)
     posts = relationship('Post', back_populates='author')
     comments = relationship('Comment', back_populates='user')
 
@@ -34,7 +33,7 @@ class Comment(Base):
     __tablename__ = 'comments'
     id = Column(Integer, primary_key=True)
     content = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(Text)
     post_id = Column(Integer, ForeignKey('posts.id'))
     user_id = Column(Integer, ForeignKey('users.id'))
 

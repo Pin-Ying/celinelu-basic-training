@@ -22,9 +22,9 @@
         - base.py
       - main.py
 - 資料表設計
-  > ![資料表設計.png](img/%E8%B3%87%E6%96%99%E8%A1%A8%E8%A8%AD%E8%A8%88.png)
+  > ![ptt-web-server.png](img/ptt-web-server.png)
 - 簡易前端設計
-  > ![簡易前端設計.png](img/%E7%B0%A1%E6%98%93%E5%89%8D%E7%AB%AF%E8%A8%AD%E8%A8%88.png)
+  > ![frontEnd-design.png](img/frontEnd-design.png)
 - 運作流程圖
   > ![運作流程圖.png](drawio-pic/%E9%81%8B%E4%BD%9C%E6%B5%81%E7%A8%8B%E5%9C%96.png)
 - 規劃時程表

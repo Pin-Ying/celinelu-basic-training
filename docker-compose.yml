@@ -5,24 +5,13 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpass123456
-      MYSQL_DATABASE: mydb
-      MYSQL_USER: celine
-      MYSQL_PASSWORD: celine123456
+      MYSQL_DATABASE: ptt
+      MYSQL_USER: test
+      MYSQL_PASSWORD: 123456
     ports:
       - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin
-    restart: always
-    ports:
-      - "8080:80"
-    environment:
-      PMA_HOST: mariadb
-    depends_on:
-      - mariadb
 
 volumes:
   mariadb_data:

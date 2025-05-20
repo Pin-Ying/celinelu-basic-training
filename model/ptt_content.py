@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import relationship, declarative_base
-from db.database import  Base
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint, func
+from sqlalchemy.orm import relationship
+
+from db.database import Base
 from datetime import datetime
 
 class User(Base):
@@ -50,11 +51,9 @@ class Comment(Base):
         UniqueConstraint('post_id', 'user_id', 'content','created_at' , name='uq_title_author_created_at'),
     )
 
-class CrawlLog(Base):
-    __tablename__ = 'crawl_logs'
-    id = Column(Integer, primary_key=True)
-    board = Column(String)
-    post_count = Column(Integer)
-    success = Column(Boolean)
-    error = Column(String, nullable=True)
-    timestamp = Column(DateTime, default=datetime.now)
+class Log(Base):
+    __tablename__ = "logs"
+    id = Column(Integer, primary_key=True, index=True)
+    level = Column(String(10))
+    message = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

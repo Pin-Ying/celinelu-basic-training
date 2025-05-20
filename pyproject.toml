@@ -12,11 +12,12 @@ mypy = "^1.15.0"
 fastapi = {extras = ["standard"], version = "^0.115.12"}
 sqlalchemy = "^2.0.41"
 pydantic = "^2.11.4"
-celery = "^5.5.2"
+celery = {extras = ["beat"], version = "^5.5.2"}
 docker = "^7.1.0"
 bs4 = "^0.0.2"
 requests = "^2.32.3"
 pymysql = "^1.1.1"
+redis = "^6.1.0"
 
 
 [build-system]

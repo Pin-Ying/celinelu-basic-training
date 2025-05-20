@@ -1,5 +1,15 @@
+from datetime import datetime
+
 from sqlalchemy.orm import Session
-from model.ptt_content import User, Post, Comment, Board
+from model.ptt_content import User, Post, Comment, Board, Log
+from schema.ptt_content import PostInput
+from db.database import Base, engine, SessionLocal
+
+def create_defult():
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    seed_boards(db)
+    db.close()
 
 
 # --- User ---
@@ -50,6 +60,62 @@ def get_or_create_post(db: Session, raw_post: dict) -> type[Post] | None | Post:
         return db.query(Post).filter_by(title=post.title, author_id=post.author_id).first()
 
 
+def create_posts_bulk(db: Session, posts: list[PostInput]):
+    created_posts = []
+    for post_input in posts:
+        author = get_or_create_user(db, post_input.author)
+
+        existing = db.query(Post).filter_by(
+            title=post_input.title,
+            author_id=author.id,
+            created_at=post_input.created_at
+        ).first()
+        if existing:
+            continue
+
+        new_post = Post(
+            title=post_input.title,
+            content=post_input.content,
+            created_at=post_input.created_at,
+            board_id=post_input.board_id,
+            author_id=author.id
+        )
+        db.add(new_post)
+        db.flush()
+
+        # comments
+        seen_comments = set()
+        for c in post_input.comments:
+            comment_key = (c.user, c.content, c.created_at)
+            if comment_key in seen_comments:
+                continue
+            seen_comments.add(comment_key)
+            comment_user = get_or_create_user(db, c.user)
+            comment = Comment(
+                post_id=new_post.id,
+                user_id=comment_user.id,
+                content=c.content,
+                created_at=c.created_at
+            )
+
+            existing_comment = db.query(Comment).filter_by(
+                post_id=new_post.id,
+                user_id=comment_user.id,
+                content=c.content,
+                created_at=c.created_at
+            ).first()
+
+            if existing_comment:
+                continue
+
+            db.add(comment)
+
+        created_posts.append(new_post)
+
+    db.commit()
+    return created_posts
+
+
 def create_post_with_comments(db: Session, raw_post: dict):
     post = get_or_create_post(db, raw_post)
 
@@ -81,11 +147,16 @@ def create_post_with_comments(db: Session, raw_post: dict):
 
 # --- Board ---
 all_boards = {'Stock': 1, 'Baseball': 2, 'NBA': 3, 'HatePolitics': 4, 'Lifeismoney': 5}
-
-
 def seed_boards(db: Session):
     for name, id_ in all_boards.items():
         exists = db.query(Board).filter_by(id=id_).first()
         if not exists:
             db.add(Board(id=id_, name=name))
     db.commit()
+
+# --- Log ---
+def log_crawl_result(db: Session, message: str, level: str = "INFO"):
+    log = Log(message=message, level=level)
+    db.add(log)
+    db.commit()
+

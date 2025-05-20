@@ -11,5 +11,6 @@ class PostInput(BaseModel):
     title: str
     content: str
     author: str
+    board_id: int
     created_at: datetime
     comments: List[CommentInput]

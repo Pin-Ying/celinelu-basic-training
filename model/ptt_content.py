@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base
 from db.database import  Base
 from datetime import datetime
@@ -29,6 +29,11 @@ class Post(Base):
     board = relationship('Board', back_populates='posts')
     comments = relationship('Comment', back_populates='post')
 
+    # 確保不會重複同一篇文章(標題、作者、時間)
+    __table_args__ = (
+        UniqueConstraint('title', 'author_id', 'created_at', name='uq_title_author_created_at'),
+    )
+
 class Comment(Base):
     __tablename__ = 'comments'
     id = Column(Integer, primary_key=True)
@@ -39,3 +44,17 @@ class Comment(Base):
 
     post = relationship('Post', back_populates='comments')
     user = relationship('User', back_populates='comments')
+
+    # 確保不會重複同一則留言(來源文章、發言者、發言內容、時間)
+    __table_args__ = (
+        UniqueConstraint('post_id', 'user_id', 'content','created_at' , name='uq_title_author_created_at'),
+    )
+
+class CrawlLog(Base):
+    __tablename__ = 'crawl_logs'
+    id = Column(Integer, primary_key=True)
+    board = Column(String)
+    post_count = Column(Integer)
+    success = Column(Boolean)
+    error = Column(String, nullable=True)
+    timestamp = Column(DateTime, default=datetime.now)

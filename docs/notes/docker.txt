@@ -1,0 +1,30 @@
+
+docker --version
+
+Reference: https://azole.medium.com/docker-container-%E5%9F%BA%E7%A4%8E%E5%85%A5%E9%96%80%E7%AF%87-1-3cb8876f2b14
+--- container ---
+docker container ls [OPTIONS]
+Aliases: docker ps
+
+-
+docker container run [OPTIONS] IMAGE [COMMAND] [ARG...]
+Aliases: docker run
+=> 會先找尋有無該指定的 image ，若未找到就會從 registry 拉取(未指定、本地沒有就會從 Docker Hub 找)
+
+e.g. docker run -d -p 6379:6379 redis
+
+-d, --detach: Run container in background and print container ID
+-p, --publish: Publish a container's port(s) to the host
+
+-
+docker container commit [OPTIONS] CONTAINER [REPOSITORY[:TAG]
+Aliases: docker commit
+=> 將 container 建立新的 image ，保留原 image 的同時儲存我們對該 image 的修改
+
+--- image ---
+docker image ls [OPTIONS] [REPOSITORY[:TAG]]
+Aliases: docker images
+
+
+--- log ---
+docker logs <container>

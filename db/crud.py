@@ -1,6 +1,9 @@
 from datetime import datetime
 
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
+import time
+
 from model.ptt_content import User, Post, Comment, Board, Log
 from schema.ptt_content import PostInput
 from db.database import Base, engine, SessionLocal
@@ -11,18 +14,27 @@ def create_defult():
     seed_boards(db)
     db.close()
 
+def safe_commit(session: Session, retries: int = 3, delay: float = 0.5):
+    for attempt in range(retries):
+        try:
+            session.commit()
+            return
+        except OperationalError as e:
+            if "Deadlock found" in str(e):
+                session.rollback()
+                time.sleep(delay)
+                continue
+            raise
+        except Exception:
+            session.rollback()
+            raise
+    raise Exception("Deadlock could not be resolved after retries.")
+
 
 # --- User ---
 # def get_user_by_id(db: Session, user_id: int):
 #     return db.query(User).filter(User.id == user_id).first()
 #
-# def create_user(db: Session, username: str):
-#     user = User(name=username)
-#     db.add(user)
-#     db.commit()
-#     db.refresh(user)
-#     return user
-
 
 def get_or_create_user(session: Session, username: str) -> User:
     user = session.query(User).filter_by(name=username).first()
@@ -34,107 +46,70 @@ def get_or_create_user(session: Session, username: str) -> User:
 
 
 # --- Post ---
-def get_or_create_post(db: Session, raw_post: dict) -> type[Post] | None | Post:
-    author = get_or_create_user(db, raw_post['author']).id
-    # 先查詢是否已存在
-    existing = db.query(Post).filter_by(title=raw_post['title'], author_id=author, created_at=raw_post['created_at']).first()
-    if existing:
-        return existing  # 已存在，直接回傳
-
-    # 嘗試新增
-    post = Post(
-        author_id=author,
-        board_id=raw_post['board_id'],
-        title=raw_post['title'],
-        created_at=raw_post['created_at'],
-        content=raw_post['content']
-    )
-    db.add(post)
-    try:
-        db.commit()
-        db.refresh(post)
-        return post
-    except Exception:
-        db.rollback()
-        # 有可能別人同時也在新增 → 再查一次
-        return db.query(Post).filter_by(title=post.title, author_id=post.author_id).first()
-
-
 def create_posts_bulk(db: Session, posts: list[PostInput]):
     created_posts = []
-    for post_input in posts:
-        author = get_or_create_user(db, post_input.author)
+    try:
+        for post_input in posts:
+            author = get_or_create_user(db, post_input.author)
 
-        existing = db.query(Post).filter_by(
-            title=post_input.title,
-            author_id=author.id,
-            created_at=post_input.created_at
-        ).first()
-        if existing:
-            continue
-
-        new_post = Post(
-            title=post_input.title,
-            content=post_input.content,
-            created_at=post_input.created_at,
-            board_id=post_input.board_id,
-            author_id=author.id
-        )
-        db.add(new_post)
-        db.flush()
-
-        # comments
-        seen_comments = set()
-        for c in post_input.comments:
-            comment_key = (c.user, c.content, c.created_at)
-            if comment_key in seen_comments:
-                continue
-            seen_comments.add(comment_key)
-            comment_user = get_or_create_user(db, c.user)
-            comment = Comment(
-                post_id=new_post.id,
-                user_id=comment_user.id,
-                content=c.content,
-                created_at=c.created_at
-            )
-
-            existing_comment = db.query(Comment).filter_by(
-                post_id=new_post.id,
-                user_id=comment_user.id,
-                content=c.content,
-                created_at=c.created_at
+            existing = db.query(Post).filter_by(
+                title=post_input.title,
+                author_id=author.id,
+                created_at=post_input.created_at
             ).first()
-
-            if existing_comment:
+            if existing:
                 continue
 
-            db.add(comment)
+            new_post = Post(
+                title=post_input.title,
+                content=post_input.content,
+                created_at=post_input.created_at,
+                board_id=post_input.board_id,
+                author_id=author.id
+            )
+            db.add(new_post)
+            db.flush()
 
-        created_posts.append(new_post)
+            seen_comments = set()
+            for c in post_input.comments:
+                comment_key = (c.user, c.content, c.created_at)
+                if comment_key in seen_comments:
+                    continue
+                seen_comments.add(comment_key)
 
-    db.commit()
+                comment_user = get_or_create_user(db, c.user)
+
+                existing_comment = db.query(Comment).filter_by(
+                    post_id=new_post.id,
+                    user_id=comment_user.id,
+                    content=c.content,
+                    created_at=c.created_at
+                ).first()
+
+                if existing_comment:
+                    continue
+
+                comment = Comment(
+                    post_id=new_post.id,
+                    user_id=comment_user.id,
+                    content=c.content,
+                    created_at=c.created_at
+                )
+                db.add(comment)
+
+            created_posts.append(new_post)
+
+        safe_commit(db)
+
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise e
+
+    except Exception as e:
+        db.rollback()
+        raise e
+
     return created_posts
-
-
-def create_post_with_comments(db: Session, raw_post: dict):
-    post = get_or_create_post(db, raw_post)
-
-    for row_comment in raw_post.get('comments', []):
-        row_comment = dict(row_comment)
-        comment_user = get_or_create_user(db, row_comment['user']).id
-        comment = Comment(
-            user_id=comment_user,
-            content=row_comment['content'],
-            created_at=row_comment['created_at'],
-            post_id=post.id  # 自動關聯
-        )
-        post.comments.append(comment)
-
-    db.add(post)
-    db.commit()
-    db.refresh(post)  # 可回傳 post.id 等資訊
-    return post
-
 
 # --- Comment ---
 # def add_comment(db: Session, post_id: int, user_id: int, content: str):

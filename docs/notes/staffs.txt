@@ -1,0 +1,35 @@
+
+加速爬蟲 => concurrent.futures --- 啟動平行任務
+Reference: https://docs.python.org/zh-tw/3/library/concurrent.futures.html
+- ThreadPoolExecutor =>
+
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+with ThreadPoolExecutor(max_workers=5) as executor:
+    futures = [executor.submit(self.parse_article, a) for a in a_tags]
+    for future in as_completed(futures):
+        try:
+            post = future.result()
+            if post:
+                all_posts.append(post)
+        except Exception as e:
+            logger.error(f"Thread parse error: {e}")
+
+
+資料庫因非同步執行而被同時操作，造成Deadlock => retries 機制
+def safe_commit(session: Session, retries: int = 3, delay: float = 0.5):
+    for attempt in range(retries):
+        try:
+            session.commit()
+            return
+        except OperationalError as e:
+            if "Deadlock found" in str(e):
+                session.rollback()
+                time.sleep(delay)
+                continue
+            raise
+        except Exception:
+            session.rollback()
+            raise
+    raise Exception("Deadlock could not be resolved after retries.")

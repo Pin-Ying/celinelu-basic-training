@@ -21,7 +21,7 @@ class PttCrawler:
         self.db = db
         self.board = board
         self.board_id = board_id
-        self.cutoff_date = datetime.now() - timedelta(days=3)
+        self.cutoff_date = datetime.now() - timedelta(days=365)
         self.session = requests.Session()
         self.session.cookies.set("over18", "1")
 
@@ -84,7 +84,7 @@ class PttCrawler:
         all_posts = []
 
         while True:
-            logger.info(f"Crawling page: {page}...")
+            logger.info(f"{self.board}, Crawling page: {page}...")
             soup = self.get_soup(f"{self.BASE_URL}/bbs/{self.board}/{page}")
             if not soup:
                 break
@@ -130,7 +130,7 @@ class PttCrawler:
     def run(self):
         posts = self.crawl()
         finished_posts = 0
-        running_pages = 50
+        running_pages = 100
         while posts:
             try:
                 if finished_posts >= len(posts):
@@ -143,12 +143,4 @@ class PttCrawler:
                 print(f"[Error] {e}")
                 continue
         return len(posts)
-
-if __name__ == '__main__':
-    from db.crud import create_defult
-    from db.database import SessionLocal
-    create_defult()
-    db = SessionLocal()
-    runner = PttCrawler(db,'Stock',1)
-    result = runner.run()
 

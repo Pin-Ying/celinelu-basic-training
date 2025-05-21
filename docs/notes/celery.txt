@@ -1,0 +1,22 @@
+
+Reference: https://medium.com/@v0220225/backend-%E6%8E%92%E7%A8%8B%E6%8E%92%E8%B5%B7%E4%BE%86-celery-7cd8ca964716
+
+--- Setting ---
+Brokers: 接收、傳送與分派 tasks
+e.g. RabbitMQ、Redis
+
+Consumer: 執行 tasks
+Result backend: 紀錄執行 tasks 的結果
+
+
+
+
+--- celery worker ---
+celery -A <module_name> worker -l info -P gevent
+
+-l, --longlevel
+
+--- celery beat ---
+timezone = 'Europe/London'
+
+Crontab schedules: https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html

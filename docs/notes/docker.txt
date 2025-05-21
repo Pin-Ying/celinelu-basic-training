@@ -13,6 +13,8 @@ Aliases: docker run
 
 e.g. docker run -d -p 6379:6379 redis
 
+docker run -d --name mariadb -e MARIADB_ROOT_PASSWORD=rootpass123456 -p 3306:3306 mariadb
+
 -d, --detach: Run container in background and print container ID
 -p, --publish: Publish a container's port(s) to the host
 
@@ -28,3 +30,8 @@ Aliases: docker images
 
 --- log ---
 docker logs <container>
+
+
+docker exec -it <mariadb_container_name> bash
+
+docker compose up

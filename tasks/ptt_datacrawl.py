@@ -4,9 +4,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import logging
 
+from db.crud import get_newest_post
 from schema.ptt_content import PostInput
-from db.crud import create_posts_bulk
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -14,14 +13,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ptt_crawler")
 
+
 class PttCrawler:
     BASE_URL = "https://www.ptt.cc"
 
-    def __init__(self, db, board: str, board_id: int):
+    def __init__(self, db, board: str, board_id: int, newest_post_date=datetime.now() - timedelta(days=365)):
         self.db = db
         self.board = board
         self.board_id = board_id
-        self.cutoff_date = datetime.now() - timedelta(days=365)
+        self.cutoff_date = newest_post_date
         self.session = requests.Session()
         self.session.cookies.set("over18", "1")
 
@@ -126,21 +126,3 @@ class PttCrawler:
             page = prev_link["href"].split("/")[-1]
 
         return all_posts
-
-    def run(self):
-        posts = self.crawl()
-        finished_posts = 0
-        running_pages = 100
-        while posts:
-            try:
-                if finished_posts >= len(posts):
-                    break
-                end_page_num = min(finished_posts + running_pages, len(posts))
-                create_posts_bulk(self.db, posts[finished_posts: end_page_num])
-                logging.info(f"Finished posts {finished_posts}~{end_page_num}")
-                finished_posts += running_pages
-            except Exception as e:
-                print(f"[Error] {e}")
-                continue
-        return len(posts)
-

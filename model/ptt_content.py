@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from db.database import Base
 from datetime import datetime
 
+
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
@@ -10,11 +11,13 @@ class User(Base):
     posts = relationship('Post', back_populates='author')
     comments = relationship('Comment', back_populates='user')
 
+
 class Board(Base):
     __tablename__ = 'boards'
     id = Column(Integer, primary_key=True)
     name = Column(String(255), unique=True, nullable=False)
     posts = relationship('Post', back_populates='board')
+
 
 class Post(Base):
     __tablename__ = 'posts'
@@ -33,6 +36,7 @@ class Post(Base):
         UniqueConstraint('title', 'author_id', 'created_at', name='uq_title_author_created_at'),
     )
 
+
 class Comment(Base):
     __tablename__ = 'comments'
     id = Column(Integer, primary_key=True)
@@ -45,8 +49,9 @@ class Comment(Base):
     user = relationship('User', back_populates='comments')
 
     __table_args__ = (
-        UniqueConstraint('post_id', 'user_id', 'content','created_at' , name='uq_title_author_created_at'),
+        UniqueConstraint('post_id', 'user_id', 'content', 'created_at', name='uq_title_author_created_at'),
     )
+
 
 class Log(Base):
     __tablename__ = "logs"

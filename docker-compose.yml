@@ -1,4 +1,12 @@
+version: '3.8'
+
 services:
+  redis:
+    image: redis:6
+    container_name: redis-training
+    ports:
+      - "6379:6379"
+
   mariadb:
     image: mariadb:10.11
     container_name: mariadb
@@ -12,6 +20,43 @@ services:
       - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
+
+  web:
+    build: .
+    container_name: web
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - mariadb
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - DATABASE_URL=mysql+pymysql://test:123456@mariadb:3306/ptt_db
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+
+  celery_worker:
+    build: .
+    container_name: celery_worker
+    depends_on:
+      - redis
+      - web
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - DATABASE_URL=mysql+pymysql://test:123456@mariadb:3306/ptt_db
+    command: celery -A tasks.celery_tasks worker --loglevel=info
+
+  celery_beat:
+    build: .
+    container_name: celery_beat
+    depends_on:
+      - redis
+      - web
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - DATABASE_URL=mysql+pymysql://test:123456@mariadb:3306/ptt_db
+    command: celery -A tasks.celery_tasks beat --loglevel=info
 
 volumes:
   mariadb_data:

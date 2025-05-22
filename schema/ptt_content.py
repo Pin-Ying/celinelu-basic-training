@@ -48,3 +48,12 @@ class PostSchema(BaseModel):
 
     class Config:
         orm_mode = True
+
+class PostSearch(BaseModel):
+    author: AuthorSchema
+    board: BoardSchema
+    start_datetime: datetime
+    end_datetime: datetime
+
+    class Config:
+        orm_mode = True

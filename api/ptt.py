@@ -4,7 +4,7 @@ from typing import List
 
 from db.crud import get_post_filter_by
 from db.database import SessionLocal
-from schema.ptt_content import PostSchema, PostInput
+from schema.ptt_content import PostSchema, PostInput, PostSearch
 
 app = FastAPI()
 router = APIRouter()
@@ -30,9 +30,10 @@ async def get_post(db=Depends(get_db), id=None):
 
 
 @router.get("/api/statistics", response_model=List[PostSchema])
-async def get_statistics():
+async def get_statistics(db=Depends(get_db), **search_filter):
+    PostSearch(**search_filter)
 
-    pass
+    return
 
 
 @router.post("/api/posts", response_model=PostInput)

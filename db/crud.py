@@ -63,6 +63,7 @@ def creat_post(post_input: PostInput, author_id: int) -> Post:
         author_id=author_id
     )
 
+
 def get_newest_post(db: Session, board: int):
     return db.query(Post).filter_by(board_id=board).order_by(Post.created_at.desc()).first()
 
@@ -118,7 +119,7 @@ def create_posts_bulk(db: Session, posts: list[PostInput], batch_size: int = 20)
                 if post_key in existing_keys:
                     continue
 
-                new_post = creat_post(post_input,author_id)
+                new_post = creat_post(post_input, author_id)
                 db.add(new_post)
                 db.flush()  # 確保拿到 post.id
 
@@ -159,6 +160,7 @@ def creat_comment(comment_input: CommentInput, user_id: int, post_id: int):
         content=comment_input.content,
         created_at=comment_input.created_at
     )
+
 
 # def add_comment(db: Session, post_id: int, user_id: int, content: str):
 #     comment = Comment(post_id=post_id, user_id=user_id, content=content)

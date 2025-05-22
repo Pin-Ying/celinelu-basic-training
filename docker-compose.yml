@@ -45,6 +45,7 @@ services:
       - web
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
       - DATABASE_URL=mysql+pymysql://test:123456@mariadb:3306/ptt_db
     command: celery -A tasks.celery_tasks worker --loglevel=info
 

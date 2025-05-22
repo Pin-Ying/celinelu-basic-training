@@ -3,8 +3,6 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import logging
-
-from db.crud import get_newest_post
 from schema.ptt_content import PostInput
 
 logging.basicConfig(
@@ -17,11 +15,11 @@ logger = logging.getLogger("ptt_crawler")
 class PttCrawler:
     BASE_URL = "https://www.ptt.cc"
 
-    def __init__(self, db, board: str, board_id: int, newest_post_date=datetime.now() - timedelta(days=365)):
+    def __init__(self, db, board: str, board_id: int, cutoff_date=datetime.now() - timedelta(days=365)):
         self.db = db
         self.board = board
         self.board_id = board_id
-        self.cutoff_date = newest_post_date
+        self.cutoff_date = cutoff_date
         self.session = requests.Session()
         self.session.cookies.set("over18", "1")
 
@@ -69,7 +67,7 @@ class PttCrawler:
                 if len(spans) >= 4:
                     post_data["comments"].append({
                         "user": spans[1].text.strip(),
-                        "content": spans[2].text.strip(),
+                        "content": spans[2].text.strip(': '),
                         "created_at": spans[3].text.strip()
                     })
 

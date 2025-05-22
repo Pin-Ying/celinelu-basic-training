@@ -1,0 +1,9 @@
+
+install fastapi uvicorn
+uvicorn main:app --reload
+
+Swagger UI => 自動生成 API 文件
+
+
+from fastapi import Depends
+Depends 是用來 宣告某個參數是來自其他函式的輸出，而不是直接由使用者輸入

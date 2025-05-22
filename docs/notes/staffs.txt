@@ -33,3 +33,7 @@ def safe_commit(session: Session, retries: int = 3, delay: float = 0.5):
             session.rollback()
             raise
     raise Exception("Deadlock could not be resolved after retries.")
+
+讓資料庫支援中文
+ALTER DATABASE ptt_db CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+ALTER TABLE posts CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

@@ -45,7 +45,7 @@ class PttCrawler:
             if len(meta_vals) == 0:
                 return None
 
-            meta_map = {"作者": "author", "標題": "title", "時間": "created_at"}
+            meta_map = dict(作者="author", 標題="title", 時間="created_at")
             for tag, val in zip(metas, meta_vals):
                 key = meta_map.get(tag.text.strip())
                 if not key:
@@ -82,6 +82,7 @@ class PttCrawler:
         all_posts = []
 
         while True:
+            page_posts = []
             logger.info(f"{self.board}, Crawling page: {page}...")
             soup = self.get_soup(f"{self.BASE_URL}/bbs/{self.board}/{page}")
             if not soup:
@@ -106,17 +107,18 @@ class PttCrawler:
                         post = future.result()
                         if post:
                             all_posts.append(post)
+                            page_posts.append(post)
                     except Exception as e:
                         logger.error(f"Thread parse error: {e}")
 
             logger.info(f"Finish page: {page}")
-            # 排序文章時間（由舊到新）
-            all_posts.sort(key=lambda p: p.created_at)
 
-            # 判斷是否繼續爬下一頁，如果最舊文章時間早於 cutoff_date 就停止
-            if all_posts and all_posts[0].created_at < self.cutoff_date:
-                all_posts = [p for p in all_posts if p.created_at >= self.cutoff_date]
-                break
+            if len(page_posts) > 0:
+                page_posts.sort(key=lambda p: p.created_at)
+                if page_posts[0].created_at < self.cutoff_date:
+                    page_posts = [p for p in page_posts if p.created_at >= self.cutoff_date]
+                    all_posts.extend(page_posts)
+                    break
 
             prev_link = soup.select_one("div.btn-group-paging a:contains('上頁')")
             if not prev_link:

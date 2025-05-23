@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, aliased
-from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from sqlalchemy.exc import OperationalError, SQLAlchemyError, IntegrityError
 import time
 
 from model.ptt_content import User, Post, Comment, Board, Log
@@ -44,17 +44,46 @@ def safe_commit(session: Session, retries: int = 3, delay: float = 0.5):
 
 
 # --- User ---
-def get_or_create_user(session: Session, username: str) -> User:
-    user = session.query(User).filter_by(name=username).first()
-    if user is None:
+def prepare_users_from_posts(db: Session, posts: list[PostInput]):
+    all_usernames = set()
+    for p in posts:
+        all_usernames.add(p.author)
+        for c in p.comments:
+            all_usernames.add(c.user)
+
+    existing_users = db.query(User).filter(User.name.in_(all_usernames)).all()
+    user_map = {u.name: u for u in existing_users}
+
+    missing_usernames = all_usernames - user_map.keys()
+    username: str
+    new_users = [User(name=username) for username in missing_usernames]
+
+    if new_users:
+        db.add_all(new_users)
+        db.flush()
+
+    for user in new_users:
+        user_map[user.name] = user
+
+    return user_map
+
+
+def get_or_create_user(db: Session, username: str) -> type[User] | None | User:
+    user = db.query(User).filter_by(name=username).first()
+    if user:
+        return user
+    try:
         user = User(name=username)
-        session.add(user)
-        session.flush()
-    return user
+        db.add(user)
+        db.flush()  # 不 commit，讓外層統一 commit
+        return user
+    except IntegrityError:
+        db.rollback()
+        return db.query(User).filter_by(name=username).first()
 
 
 # --- Post ---
-def creat_post(post_input: PostInput, author_id: int) -> Post:
+def post_from_pydantic_to_sqlalchemy(post_input: PostInput, author_id: int) -> Post:
     return Post(
         title=post_input.title,
         content=post_input.content,
@@ -81,9 +110,9 @@ def get_post_by_search_dic(db: Session, post_search: PostSearch):
 
     filters = {}
     if post_search.author:
-        filters['author'] = post_search.author.name  # 假設 author 是 nested 且你要比對 name
+        filters['author'] = post_search.author.name
     if post_search.board:
-        filters['board'] = post_search.board.name    # 同理，取出 board.name
+        filters['board'] = post_search.board.name
 
     if filters:
         query = query.filter_by(**filters)
@@ -116,49 +145,39 @@ def get_existing_post_keys(db: Session, posts: list[PostInput]):
 
         post_keys = set((p.title, p.author_id, p.created_at) for p in existing_posts)
 
-    return post_keys, author_map
+    return post_keys
 
 
 def create_posts_bulk(db: Session, posts: list[PostInput], batch_size: int = 20):
     created_posts = []
 
     try:
-        existing_keys, author_map = get_existing_post_keys(db, posts)
+        existing_keys = get_existing_post_keys(db, posts)
+        user_map = prepare_users_from_posts(db, posts)
 
         for i in range(0, len(posts), batch_size):
-            batch = posts[i:i + batch_size]
+            posts_batch = posts[i:i + batch_size]
 
-            for post_input in batch:
-                # 取得作者（若不存在就建立）
-                author_id = author_map.get(post_input.author)
-                if author_id is None:
+            for post_input in posts_batch:
+                # 取得作者
+                author = user_map[post_input.author]
+                if author is None:
                     user = get_or_create_user(db, post_input.author)
-                    author_id = user.id
-                    author_map[post_input.author] = author_id
+                    author = user
+                    user_map[post_input.author] = user
 
-                post_key = (post_input.title, author_id, post_input.created_at)
+                post_key = (post_input.title, author.id, post_input.created_at)
                 if post_key in existing_keys:
                     continue
 
-                new_post = creat_post(post_input, author_id)
+                new_post = post_from_pydantic_to_sqlalchemy(post_input, author.id)
                 db.add(new_post)
                 db.flush()  # 確保拿到 post.id
 
-                # 處理留言（去重）
-                existing_comment_rows = db.query(
-                    Comment.user, Comment.content, Comment.created_at
-                ).filter_by(post_id=new_post.id).all()
-                seen_comments = set(existing_comment_rows)
+                existing_keys.add(post_key)
 
-                for c in post_input.comments:
-                    comment_key = (c.user, c.content, c.created_at)
-                    if comment_key in seen_comments:
-                        continue
-                    seen_comments.add(comment_key)
-
-                    comment_user = get_or_create_user(db, c.user)
-                    comment = creat_comment(c, comment_user.id, new_post.id)
-                    db.add(comment)
+                # 處理留言
+                create_comments(db, new_post, post_input, user_map)
 
                 created_posts.append(new_post)
 
@@ -174,13 +193,35 @@ def create_posts_bulk(db: Session, posts: list[PostInput], batch_size: int = 20)
 
 
 # --- Comment ---
-def creat_comment(comment_input: CommentInput, user_id: int, post_id: int):
+def comment_from_pydantic_to_sqlalchemy(comment_input: CommentInput, user_id: int, post_id: int):
     return Comment(
         post_id=post_id,
         user_id=user_id,
         content=comment_input.content,
         created_at=comment_input.created_at
     )
+
+
+def create_comments(db: Session, new_post, post_input, user_map):
+    # 處理留言（去重）
+    existing_comment_rows = db.query(
+        Comment.user, Comment.content, Comment.created_at
+    ).filter_by(post_id=new_post.id).all()
+    seen_comments = set(existing_comment_rows)
+
+    for c in post_input.comments:
+        comment_key = (c.user, c.content, c.created_at)
+        if comment_key in seen_comments:
+            continue
+        seen_comments.add(comment_key)
+
+        comment_user = user_map.get(c.user)
+        if comment_user is None:
+            comment_user = get_or_create_user(db, c.user)
+            user_map[c.user] = comment_user
+
+        comment = comment_from_pydantic_to_sqlalchemy(c, comment_user.id, new_post.id)
+        db.add(comment)
 
 
 # --- Board ---

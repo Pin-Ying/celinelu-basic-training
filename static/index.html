@@ -4,9 +4,22 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>文章管理 - Grid版</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        .grid {
+            display: grid;
+        }
 
+        .grid-cols-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .grid-cols-5 {
+            grid-template-columns: repeat(5, 1fr);
+        }
+
+        .grid-cols-6 {
+            grid-template-columns: repeat(6, 1fr);
+        }
     </style>
 </head>
 <body class="p-8 bg-gray-100">
@@ -31,9 +44,9 @@
         <div>操作</div>
     </div>
 
-    <!-- 資料列（可用迴圈產生） -->
+    <!-- 資料列 -->
     <form action="#">
-        <div id="show-data" class="space-y-2">
+        <div id="show-data">
 
         </div>
     </form>
@@ -50,6 +63,7 @@
 </body>
 
 <script>
+
     function getPostData() {
         fetch('/api/posts', {method: 'GET'})
             .then(res => res.json())
@@ -63,10 +77,10 @@
                     // language=HTML
                     row.innerHTML = `
                         <input type="text" value="${post.title}" class="border p-1 rounded text-center"/>
-                        <input type="text" value="${post.author}" class="border p-1 rounded text-center"/>
+                        <input type="text" value="${post.author.name}" class="border p-1 rounded text-center"/>
                         <input type="text" value="${post.content}" class="border p-1 rounded text-center"/>
-                        <input type="text" value="${post.board}" class="border p-1 rounded text-center"/>
-                        <input type="text" value="${post.create_at}" class="border p-1 rounded text-center"/>
+                        <input type="text" value="${post.board.name}" class="border p-1 rounded text-center"/>
+                        <input type="datetime-local" value="${post.created_at}" class="border p-1 rounded text-center"/>
                         <div>
                             <button class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">修改
                             </button>

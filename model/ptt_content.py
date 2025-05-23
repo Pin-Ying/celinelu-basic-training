@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint, func
+from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.orm import relationship
 from db.database import Base
 from datetime import datetime
@@ -23,7 +24,7 @@ class Post(Base):
     __tablename__ = 'posts'
     id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=False)
-    content = Column(Text)
+    content = Column(LONGTEXT)
     created_at = Column(DateTime, default=datetime.utcnow)
     author_id = Column(Integer, ForeignKey('users.id'))
     board_id = Column(Integer, ForeignKey('boards.id'))

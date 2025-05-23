@@ -3,7 +3,7 @@ from sqlalchemy.exc import OperationalError, SQLAlchemyError, IntegrityError
 import time
 
 from model.ptt_content import User, Post, Comment, Board, Log
-from schema.ptt_content import PostCrawl, CommentCrawl, PostSearch, PostSchema
+from schema.ptt_content import PostCrawl, CommentCrawl, PostSearch, PostSchema, PostSchemaResponse
 from db.database import Base, engine, SessionLocal
 
 
@@ -222,6 +222,28 @@ def create_post(db: Session, post_schema: PostSchema):
         raise e
 
     return post_schema
+
+
+def update_post_from_id(db: Session, post_id, post_schema: PostSchema):
+    target_post = db.query(Post).filter(Post.id == post_id).first()
+    author = get_or_create_user(db, post_schema.author.name)
+    board = get_or_create_board(db, post_schema.board.name)
+    if target_post is None:
+        return PostSchemaResponse(result="PostNotFound")
+    target_post.title = post_schema.title
+    target_post.content = post_schema.content
+    target_post.author = author
+    target_post.board = board
+    try:
+        db.add(target_post)
+        db.commit()
+    except SQLAlchemyError as e:
+        raise e
+    except Exception as e:
+        raise e
+
+    return PostSchemaResponse(result="success", data=post_schema)
+
 
 # --- Comment ---
 def comment_input_pydantic_to_sqlalchemy(comment_input: CommentCrawl, user_id: int, post_id: int):

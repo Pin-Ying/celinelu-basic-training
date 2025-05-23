@@ -3,7 +3,7 @@ from typing import List, Optional, Any, Coroutine
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
-from db.crud import get_post_filter_by, get_post_by_search_dic, create_post
+from db.crud import get_post_filter_by, get_post_by_search_dic, create_post, update_post_from_id
 from db.database import SessionLocal
 from model.ptt_content import Post
 from schema.ptt_content import PostSchema, PostSearch, AuthorSchema, BoardSchema, PostSchemaResponse
@@ -87,7 +87,8 @@ async def create_post_from_form(
 
 
 @router.put("/api/posts/{id}", response_model=PostSchemaResponse)
-async def update_post(id):
+async def update_post(id, db=Depends(get_db), post_update: PostSchema = Body(...)):
+    update_post_from_id(db, id, post_update)
     pass
 
 

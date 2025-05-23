@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import logging
-from schema.ptt_content import PostInput
+from schema.ptt_content import PostCrawl
 
 logging.basicConfig(
     level=logging.INFO,
@@ -71,7 +71,7 @@ class PttCrawler:
                         "created_at": spans[3].text.strip()
                     })
 
-            return PostInput(**post_data)
+            return PostCrawl(**post_data)
 
         except Exception as e:
             print(f"[ParseError] {url} -> {e}")

@@ -7,7 +7,7 @@ import os
 
 from db.database import SessionLocal
 from db.crud import log_crawl_result, get_newest_post, get_all_boards, create_posts_bulk
-from schema.ptt_content import PostInput
+from schema.ptt_content import PostCrawl
 from tasks.ptt_crawl import PttCrawler
 
 load_dotenv()
@@ -81,12 +81,12 @@ def crawl_all_boards():
 def save_posts_to_db(self, board, post_dicts: dict):
     db = SessionLocal()
     try:
-        post_inputs = [PostInput(**post) for post in post_dicts]
+        post_inputs = [PostCrawl(**post) for post in post_dicts]
         create_posts_bulk(db, post_inputs)
     except Exception as e:
         # 如果還沒到最大重試次數，重試但不紀錄錯誤
         if self.request.retries < self.max_retries:
-            log_crawl_result(db, f"[DB Saving({board})]: Retring! {e}", "ERROR")
+            log_crawl_result(db, f"[DB Saving({board})]: Retrying! {e}", "WARNING")
             raise self.retry(exc=e)
         # 如果已經是最後一次重試失敗，才記錄錯誤
         log_crawl_result(db, f"[DB Saving({board})]: Retry Failed {e}", "ERROR")
@@ -99,11 +99,7 @@ def save_posts_to_db(self, board, post_dicts: dict):
 def all_sub_tasks_finished(results, msg="Task Finish!"):
     db = SessionLocal()
     try:
-        # results 有可能是 None，做檢查
-        if not results:
-            log_crawl_result(db, f"{msg} (with some failures)", "WARNING")
-        else:
-            log_crawl_result(db, msg)
+        log_crawl_result(db, msg)
         return msg
     finally:
         db.close()

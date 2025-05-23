@@ -52,13 +52,17 @@
     </form>
 
     <!-- 新增欄位 -->
-    <div class="grid grid-cols-5 items-center gap-2 mt-4">
-        <input type="text" placeholder="文章標題" class="border p-2 rounded"/>
-        <input type="text" placeholder="發文者" class="border p-2 rounded"/>
-        <input type="date" class="border p-2 rounded"/>
-        <input type="text" placeholder="版面" class="border p-2 rounded"/>
-        <button class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">新增</button>
-    </div>
+    <form action="/api/posts/form" method="POST">
+        <div>
+            <input type="text" name="title" placeholder="文章標題" class="border p-2 rounded"/>
+            <input type="text" name="author_name" placeholder="發文者" class="border p-2 rounded"/>
+            <input type="text" name="content" placeholder="內文" class="border p-2 rounded"/>
+<!--            <input type="date" class="border p-2 rounded"/>-->
+            <input type="text" name="board_name" placeholder="版面" class="border p-2 rounded"/>
+            <button>新增</button>
+        </div>
+    </form>
+
 </div>
 </body>
 

@@ -34,4 +34,10 @@ docker logs <container>
 
 docker exec -it <mariadb_container_name> bash
 
+# 建立並啟動所有容器
+docker compose up -d --build
+
+
 docker compose up
+docker compose up -d --remove-orphans
+docker compose build

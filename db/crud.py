@@ -3,7 +3,7 @@ from sqlalchemy.exc import OperationalError, SQLAlchemyError
 import time
 
 from model.ptt_content import User, Post, Comment, Board, Log
-from schema.ptt_content import PostInput, CommentInput
+from schema.ptt_content import PostInput, CommentInput, PostSearch
 from db.database import Base, engine, SessionLocal
 
 
@@ -74,6 +74,27 @@ def get_post_filter_by(db: Session, page_limit=50, page_offset=None, **filters):
         return query_filter.all()
     else:
         return query_filter.offset(page_offset).all()
+
+
+def get_post_by_search_dic(db: Session, post_search: PostSearch):
+    query = db.query(Post)
+
+    filters = {}
+    if post_search.author:
+        filters['author'] = post_search.author.name  # 假設 author 是 nested 且你要比對 name
+    if post_search.board:
+        filters['board'] = post_search.board.name    # 同理，取出 board.name
+
+    if filters:
+        query = query.filter_by(**filters)
+
+    if post_search.start_datetime:
+        query = query.filter(Post.created_at >= post_search.start_datetime)
+
+    if post_search.end_datetime:
+        query = query.filter(Post.created_at <= post_search.end_datetime)
+
+    return query.all()
 
 
 def get_existing_post_keys(db: Session, posts: list[PostInput]):
@@ -160,14 +181,6 @@ def creat_comment(comment_input: CommentInput, user_id: int, post_id: int):
         content=comment_input.content,
         created_at=comment_input.created_at
     )
-
-
-# def add_comment(db: Session, post_id: int, user_id: int, content: str):
-#     comment = Comment(post_id=post_id, user_id=user_id, content=content)
-#     db.add(comment)
-#     db.commit()
-#     db.refresh(comment)
-#     return comment
 
 
 # --- Board ---

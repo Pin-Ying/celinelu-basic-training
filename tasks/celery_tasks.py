@@ -7,6 +7,7 @@ import os
 
 from db.database import SessionLocal
 from db.crud import log_crawl_result, get_newest_post, get_all_boards, create_posts_bulk
+from schema.ptt_content import PostInput
 from tasks.ptt_datacrawl import PttCrawler
 
 load_dotenv()
@@ -41,11 +42,13 @@ def crawl_single_board_task(board: str, board_id: int):
 
         log_crawl_result(db, f"[Crawl({board})]: Started!")
         posts = crawler.crawl()
+        post_dicts = [post.dict() for post in posts]
         log_crawl_result(db, f"[Crawl({board})]: Finish! Crawled {len(posts)} posts")
+
 
         # chord => 確定 save_posts_to_db 都完成並傳訊息
         header_tasks = [
-            save_posts_to_db.s(board, posts[i:i + 50])
+            save_posts_to_db.s(board, post_dicts[i:i + 50])
             for i in range(0, len(posts), 50)
         ]
         chord(header_tasks)(all_sub_tasks_finished.s(f"[DB Save({board})]: Finish!"))
@@ -75,9 +78,10 @@ def crawl_all_boards():
 
 
 @celery_app.task(name="save_posts_to_db", bind=True, max_retries=3, default_retry_delay=10)
-def save_posts_to_db(self, board, post_inputs):
+def save_posts_to_db(self, board, post_dicts: dict):
     db = SessionLocal()
     try:
+        post_inputs = [PostInput(**post) for post in post_dicts]
         create_posts_bulk(db, post_inputs)
         log_crawl_result(db, f"[DB Save({board})]: Finish!")
     except Exception as e:

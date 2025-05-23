@@ -215,6 +215,7 @@ def create_post(db: Session, post_schema: PostSchema):
         db.commit()
         db.refresh(new_post)
         post_schema.id = new_post.id
+        post_schema.created_at = new_post.created_at
     except SQLAlchemyError as e:
         raise e
     except Exception as e:

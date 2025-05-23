@@ -60,3 +60,11 @@ class PostSearch(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class PostSchemaResponse(BaseModel):
+    result: str = ''
+    data: Optional[PostSchema] = None
+
+    class Config:
+        orm_mode = True

@@ -41,3 +41,9 @@ docker compose up -d --build
 docker compose up
 docker compose up -d --remove-orphans
 docker compose build
+
+# 修改程式碼或 Dockerfile 後
+docker compose up -d --build
+
+docker compose down -v  # 清除 container + volume
+docker compose up -d --build

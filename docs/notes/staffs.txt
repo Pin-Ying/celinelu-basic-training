@@ -37,3 +37,13 @@ def safe_commit(session: Session, retries: int = 3, delay: float = 0.5):
 讓資料庫支援中文
 ALTER DATABASE ptt_db CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 ALTER TABLE posts CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+測試POST
+curl -X POST http://localhost:8000/api/posts ^
+-H "Content-Type: application/json" ^
+-d "{\"title\": \"這是一篇測試文章\", \"content\": \"這是文章內容\", \"author\": {\"name\": \"test_author\"}, \"board\": {\"name\": \"NBA\"}}"
+
+
+curl -X POST http://localhost:8000/api/posts/form ^
+-H "Content-Type: application/x-www-form-urlencoded" ^
+-d "title=test_title&author_name=test_author&content=test。&board_name=NBA"

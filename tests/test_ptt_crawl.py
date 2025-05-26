@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import MagicMock
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
@@ -12,7 +11,7 @@ def test_parse_article_from_local_html():
 
     crawler = PttCrawler(db=None, board="test", board_id=1)
 
-    # mock get_soup 直接回傳本地 HTML 解析結果
+    # MagicMock，假扮get_soup，直接回傳預設的 html 假資料
     crawler.get_soup = MagicMock(return_value=BeautifulSoup(html_content, "html.parser"))
 
     # 模擬 a_tag
@@ -39,7 +38,7 @@ def test_crawl(monkeypatch):
     with open("test_ptt_post.html", encoding="utf-8") as f:
         article_html = f.read()
 
-    # 根據 URL 不同回傳不同 soup
+    # 假扮get_soup，根據抓到的 URL ，回傳不同的 html 假資料
     def mock_get_soup(url):
         if url.endswith("index.html"):
             return BeautifulSoup(page_html_1, "html.parser")

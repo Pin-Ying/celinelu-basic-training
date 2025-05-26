@@ -1,0 +1,3 @@
+Mock
+
+MagicMock => 假函式，替代函式

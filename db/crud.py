@@ -32,6 +32,9 @@ def safe_commit(session: Session, retries: int = 3, delay: float = 0.5):
         try:
             session.commit()
             return
+        except IntegrityError as e:
+            if "Duplicate entry" in str(e):
+                raise
         except OperationalError as e:
             if "Deadlock found" in str(e):
                 session.rollback()

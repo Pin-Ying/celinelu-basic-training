@@ -1,5 +1,5 @@
 # tasks/celery_tasks.py
-from celery import Celery, chord
+from celery import Celery, chord, chain, group
 from celery.schedules import crontab
 from dotenv import load_dotenv
 import logging
@@ -32,29 +32,30 @@ celery_app.conf.update(
 @celery_app.task(name="crawl_single_board_task")
 def crawl_single_board_task(board: str, board_id: int):
     db = SessionLocal()
-
     try:
         newest_post = get_newest_post(db, board_id)
-        if not newest_post:
-            crawler = PttCrawler(db, board, board_id)
-        else:
+        if newest_post:
             crawler = PttCrawler(db, board, board_id, newest_post.created_at)
+        else:
+            crawler = PttCrawler(db, board, board_id)
 
         log_crawl_result(db, f"[Crawl({board})]: Started!")
         posts = crawler.crawl()
         post_dicts = [post.dict() for post in posts]
         log_crawl_result(db, f"[Crawl({board})]: Finish! Crawled {len(posts)} posts")
 
-
-        # chord => 確定 save_posts_to_db 都完成並傳訊息
-        header_tasks = [
+        # 回傳一組任務：先存 DB，再寫入 log
+        save_tasks = [
             save_posts_to_db.s(board, post_dicts[i:i + 50])
             for i in range(0, len(posts), 50)
         ]
-        chord(header_tasks)(all_sub_tasks_finished.s(f"[DB Save({board})]: Finish!"))
+        return chain(
+            group(save_tasks),
+            all_sub_tasks_finished.s(f"[DB Save({board})]: Finish!")
+        )()
     except Exception as e:
         log_crawl_result(db, f"[Crawl({board})]: Error! {e}", "ERROR")
-        logger.error(f"[Crawl({board})]:Error! {e}")
+        logger.error(f"[Crawl({board})]: Error! {e}")
     finally:
         db.close()
 
@@ -66,12 +67,15 @@ def crawl_all_boards():
     ALL_BOARDS = get_all_boards(db)
     db.close()
     try:
-        # chord => 確定 crawl_single_board_task 都完成並傳訊息
+        # 確定 crawl_single_board_task 都完成並傳訊息
         header_tasks = [
             crawl_single_board_task.s(board, board_id)
             for board, board_id in ALL_BOARDS.items()
         ]
-        chord(header_tasks)(all_sub_tasks_finished.s())
+        chain(
+            group(header_tasks),
+            all_sub_tasks_finished.s(f"Task Finished!")
+        )()
 
     except Exception as e:
         logger.error(f"[Crawl Error]: {e}", "ERROR")
@@ -96,7 +100,7 @@ def save_posts_to_db(self, board, post_dicts: dict):
 
 
 @celery_app.task
-def all_sub_tasks_finished(results, msg="Task Finish!"):
+def all_sub_tasks_finished(result, msg="Task Finish!"):
     db = SessionLocal()
     try:
         log_crawl_result(db, msg)

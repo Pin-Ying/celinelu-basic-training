@@ -17,6 +17,23 @@
         .grid-cols-6 {
             grid-template-columns: repeat(6, 1fr);
         }
+
+        #show-one-post {
+            display: none;
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            width: 40%;
+            max-height: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+            z-index: 9999;
+            overflow-y: scroll;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body class="p-8 bg-gray-100">
@@ -34,7 +51,7 @@
             <input type="text" name="content" placeholder="內文"/>
             <!--<input type="date" />-->
             <input type="text" name="board_name" placeholder="版面"/>
-            <button onclick="add_post()">新增</button>
+            <button type="button" onclick="addPost()">新增</button>
         </div>
     </form>
 
@@ -64,11 +81,72 @@
 
     </div>
 
+    <div id="show-one-post">
+
+    </div>
+
 
 </div>
 </body>
 
 <script>
+    function closePost() {
+        document.getElementById("show-one-post").style.display = "none";
+    }
+
+    function createPostForm(post, container) {
+        // console.log(post);
+        const row = document.createElement('form');
+        row.className = "grid grid-cols-6";
+        row.id = "update-post-" + post.id
+
+
+        row.innerHTML = `
+                    <input type="text" name="title" value="${post.title}"/>
+                    <input type="text" name="author_name" value="${post.author.name}"/>
+                    <input type="text" name="content" value="${post.content}"/>
+                    <input type="text" name="board_name" value="${post.board.name}"/>
+                    <input type="datetime-local" name="created_at" value="${post.created_at}"/>
+                    <div>
+                        <button type="button" onclick="getOnePostData(${post.id})">查看</button>
+                        <button type="button" onclick="updatePost(${post.id})">修改</button>
+                        <button type="button" onclick="deletePost(${post.id})">刪除</button>
+                    </div>
+                    `;
+
+        container.appendChild(row);
+    }
+
+    function getOnePostData(post_id) {
+        fetch('/api/posts/' + post_id, {method: 'GET'})
+            .then(res => res.json())
+            .then(data => {
+                console.log(data);
+                let post = data[0];
+                let container = document.querySelector("#show-one-post");
+                container.style.display = 'block';
+                container.innerHTML = `
+                                    <div>
+                                        文章標題：${post.title}
+                                    </div>
+                                    <div>
+                                        發文者：${post.author.name}
+                                    </div>
+                                    <div>
+                                        內文：${post.content}
+                                    </div>
+                                    <div>
+                                        版面：${post.board.name}
+                                    </div>
+                                    <div>
+                                        發文時間：${post.created_at}
+                                    </div>
+                                    <button onclick="closePost()">關閉</button>
+                                    `;
+
+            })
+            .catch(err => console.error(err));
+    }
 
     function getPostData() {
         fetch('/api/posts', {method: 'GET'})
@@ -76,28 +154,7 @@
             .then(data => {
                 let container = document.querySelector("#show-data");
                 data.forEach(post => {
-                    console.log(post);
-                    const row = document.createElement('form');
-                    row.className = "grid grid-cols-6";
-                    row.method = "PUT"
-                    row.action = "/api/posts/form/'${post.id}'"
-
-
-                    row.innerHTML = `
-                        <input type="text" name="title" value="${post.title}"/>
-                        <input type="text" name="author_name" value="${post.author.name}"/>
-                        <input type="text" name="content" value="${post.content}"/>
-                        <input type="text" name="board_name" value="${post.board.name}"/>
-                        <input type="datetime-local" name="created_at" value="${post.created_at}"/>
-                        <div>
-                            <button type="submit">修改
-                            </button>
-                            <button onclick="delete_post(${post.id})">刪除
-                            </button>
-                        </div>
-                    `;
-
-                    container.appendChild(row);
+                    createPostForm(post, container)
                 });
             })
             .catch(err => console.error(err));
@@ -124,34 +181,13 @@
                 let container = document.querySelector("#show-data");
                 container.innerHTML = '';
                 data.forEach(post => {
-                    console.log(post);
-                    const row = document.createElement('form');
-                    row.className = "grid grid-cols-6";
-                    row.method = "PUT"
-                    row.action = "/api/posts/form/'${post.id}'"
-
-
-                    row.innerHTML = `
-                        <input type="text" name="title" value="${post.title}"/>
-                        <input type="text" name="author_name" value="${post.author.name}"/>
-                        <input type="text" name="content" value="${post.content}"/>
-                        <input type="text" name="board_name" value="${post.board.name}"/>
-                        <input type="datetime-local" name="created_at" value="${post.created_at}"/>
-                        <div>
-                            <button type="button">修改
-                            </button>
-                            <button type="button" onclick="delete_post(${post.id})">刪除
-                            </button>
-                        </div>
-                    `;
-
-                    container.appendChild(row);
+                    createPostForm(post, container)
                 });
             })
             .catch(err => console.error(err));
     }
 
-    function add_post() {
+    function addPost() {
         const form = document.querySelector("#add-post-form");
         const formData = new FormData(form);
 
@@ -161,18 +197,44 @@
         })
             .then(res => res.json())
             .then(data => {
-                console.log(data);
+                if (data["result"] === "success") {
+                    console.log(data["data"]);
+                    getPostData();
+                }
+
             })
             .catch(err => console.error(err));
     }
 
-    function delete_post(post_id) {
+    function updatePost(post_id) {
+        const form = document.querySelector("#update-post-" + post_id);
+        const formData = new FormData(form);
+
+        fetch(`/api/posts/form/${post_id}`, {
+            method: 'PUT',
+            body: formData
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data["result"] === "success") {
+                    console.log(data);
+                    getPostData();
+                }
+
+            })
+            .catch(err => console.error(err));
+    }
+
+    function deletePost(post_id) {
         fetch(`/api/posts/${post_id}`, {
             method: 'DELETE'
         })
             .then(res => res.json())
             .then(data => {
-                console.log(data);
+                if (data["result"] === "success") {
+                    console.log(data);
+                    getPostData();
+                }
 
             })
             .catch(err => console.error(err));

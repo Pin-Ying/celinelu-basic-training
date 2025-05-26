@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session, aliased, joinedload
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import OperationalError, SQLAlchemyError, IntegrityError
 import time
 
@@ -245,8 +245,10 @@ def update_post_from_id(db: Session, post_id, post_schema: PostSchema):
         return PostSchemaResponse(result="PostNotFound")
     target_post.title = post_schema.title
     target_post.content = post_schema.content
+    target_post.created_at = post_schema.created_at
     target_post.author = author
     target_post.board = board
+
     try:
         db.add(target_post)
         db.commit()

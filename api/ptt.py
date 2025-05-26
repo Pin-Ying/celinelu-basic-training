@@ -1,7 +1,8 @@
 from fastapi import APIRouter, FastAPI, Depends, Query, Form, Body
 from typing import List, Optional, Any, Coroutine
-from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
+import pytz
 
 from db.crud import get_post_filter_by, get_post_by_search_dic, create_post, update_post_from_id, delete_post_from_id
 from db.database import SessionLocal
@@ -9,7 +10,7 @@ from schema.ptt_content import PostSchema, PostSearch, AuthorSchema, BoardSchema
 
 app = FastAPI()
 router = APIRouter()
-
+tz = pytz.timezone("Asia/Taipei")
 
 def get_db():
     db = SessionLocal()
@@ -44,14 +45,14 @@ def form_to_postschema(
         content: str = Form(...),
         author_name: str = Form(...),
         board_name: str = Form(...),
-        created_at: Optional[datetime] = datetime.now()
+        created_at: Optional[datetime] = Form(None)
 ):
     return PostSchema(
         title=title,
         content=content,
         author=AuthorSchema(name=author_name) if author_name else None,
         board=BoardSchema(name=board_name) if board_name else None,
-        created_at=created_at,
+        created_at=created_at if created_at else datetime.now(tz),
     )
 
 

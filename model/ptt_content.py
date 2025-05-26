@@ -6,8 +6,6 @@ from datetime import datetime
 import pytz
 
 tz = pytz.timezone("Asia/Taipei")
-now_tz = datetime.now(tz)
-
 
 class User(Base):
     __tablename__ = 'users'
@@ -29,7 +27,7 @@ class Post(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=False)
     content = Column(LONGTEXT)
-    created_at = Column(DateTime, default=now_tz)
+    created_at = Column(DateTime, default=datetime.now(tz))
     author_id = Column(Integer, ForeignKey('users.id'))
     board_id = Column(Integer, ForeignKey('boards.id'))
 
@@ -63,4 +61,4 @@ class Log(Base):
     id = Column(Integer, primary_key=True, index=True)
     level = Column(String(10))
     message = Column(Text)
-    created_at = Column(DateTime, default=now_tz)
+    created_at = Column(DateTime, default=datetime.now(tz))

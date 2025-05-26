@@ -41,9 +41,19 @@ ALTER TABLE posts CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 測試POST
 curl -X POST http://localhost:8000/api/posts ^
 -H "Content-Type: application/json" ^
--d "{\"title\": \"這是一篇測試文章\", \"content\": \"這是文章內容\", \"author\": {\"name\": \"test_author\"}, \"board\": {\"name\": \"NBA\"}}"
+-d "{\"title\": \"test_title\", \"content\": \"test\", \"author\": {\"name\": \"test_author\"}, \"board\": {\"name\": \"home-sale\"}}"
 
 
 curl -X POST http://localhost:8000/api/posts/form ^
 -H "Content-Type: application/x-www-form-urlencoded" ^
--d "title=test_title&author_name=test_author&content=test。&board_name=NBA"
+-d "title=test_title&author_name=test_author&content=test&board_name=home-sale"
+
+curl -X PUT http://localhost:8000/api/posts/48636 ^
+-H "Content-Type: application/json" ^
+-d "{\"title\": \"test_title\", \"content\": \"test2.0\", \"author\": {\"name\": \"test_author\"}, \"board\": {\"name\": \"home-sale\"}}"
+
+curl -X PUT http://localhost:8000/api/posts/form/48636 ^
+-H "Content-Type: application/x-www-form-urlencoded" ^
+-d "title=test_title&author_name=test_author&content=test2.0&board_name=home-sale"
+
+curl -X DELETE http://localhost:8000/api/posts/48636

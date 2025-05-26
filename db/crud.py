@@ -3,7 +3,8 @@ from sqlalchemy.exc import OperationalError, SQLAlchemyError, IntegrityError
 import time
 
 from model.ptt_content import User, Post, Comment, Board, Log
-from schema.ptt_content import PostCrawl, CommentCrawl, PostSearch, PostSchema, PostSchemaResponse
+from schema.ptt_content import PostCrawl, CommentCrawl, PostSearch, PostSchema, PostSchemaResponse, BoardSchema, \
+    AuthorSchema
 from db.database import Base, engine, SessionLocal
 
 
@@ -100,6 +101,17 @@ def post_schema_pydantic_to_sqlalchemy(post_input: PostSchema, author_id: int, b
         created_at=post_input.created_at,
         board_id=board_id,
         author_id=author_id
+    )
+
+
+def post_schema_sqlalchemy_to_pydantic(post_input: Post) -> PostSchema:
+    return PostSchema(
+        id=post_input.id,
+        title=post_input.title,
+        content=post_input.content,
+        created_at=post_input.created_at,
+        board=BoardSchema(name=post_input.board.name),
+        author=AuthorSchema(name=post_input.author.name)
     )
 
 
@@ -216,12 +228,13 @@ def create_post(db: Session, post_schema: PostSchema):
         db.refresh(new_post)
         post_schema.id = new_post.id
         post_schema.created_at = new_post.created_at
-    except SQLAlchemyError as e:
-        raise e
-    except Exception as e:
-        raise e
 
-    return post_schema
+    except SQLAlchemyError as e:
+        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
+    except Exception as e:
+        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
+
+    return PostSchemaResponse(result="success", data=post_schema)
 
 
 def update_post_from_id(db: Session, post_id, post_schema: PostSchema):
@@ -237,10 +250,28 @@ def update_post_from_id(db: Session, post_id, post_schema: PostSchema):
     try:
         db.add(target_post)
         db.commit()
+        db.refresh(target_post)
+        post_schema.id = target_post.id
     except SQLAlchemyError as e:
-        raise e
+        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
     except Exception as e:
-        raise e
+        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
+
+    return PostSchemaResponse(result="success", data=post_schema)
+
+
+def delete_post_from_id(db: Session, post_id):
+    target_post = db.query(Post).filter(Post.id == post_id).first()
+    if target_post is None:
+        return PostSchemaResponse(result="PostNotFound")
+    try:
+        post_schema = post_schema_sqlalchemy_to_pydantic(target_post)
+        db.delete(target_post)
+        db.commit()
+    except SQLAlchemyError as e:
+        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
+    except Exception as e:
+        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
 
     return PostSchemaResponse(result="success", data=post_schema)
 

@@ -7,14 +7,11 @@
     <style>
         .grid {
             display: grid;
+            gap: 10px;
         }
 
         .grid-cols-4 {
             grid-template-columns: repeat(4, 1fr);
-        }
-
-        .grid-cols-5 {
-            grid-template-columns: repeat(5, 1fr);
         }
 
         .grid-cols-6 {
@@ -24,18 +21,36 @@
 </head>
 <body class="p-8 bg-gray-100">
 <div>
-    <h1 class="text-2xl font-bold">文章管理（Grid版）</h1>
+    <h1>PTT文章</h1>
+
+    <div id="msg"></div>
+
+    <!-- 新增欄位 -->
+    <div>新增文章</div>
+    <form id="add-post-form">
+        <div>
+            <input type="text" name="title" placeholder="文章標題"/>
+            <input type="text" name="author_name" placeholder="發文者"/>
+            <input type="text" name="content" placeholder="內文"/>
+            <!--<input type="date" />-->
+            <input type="text" name="board_name" placeholder="版面"/>
+            <button onclick="add_post()">新增</button>
+        </div>
+    </form>
+
+    <hr/>
 
     <!-- 篩選區 -->
-    <div class="grid grid-cols-4 gap-4">
-        <input type="text" placeholder="發文者" class="border p-2 rounded"/>
-        <input type="date" placeholder="開始時間" class="border p-2 rounded"/>
-        <input type="date" placeholder="結束時間" class="border p-2 rounded"/>
-        <input type="text" placeholder="版面" class="border p-2 rounded"/>
-    </div>
+    <div>篩選文章</div>
+    <form id="post-filter" onchange="filterPostData()" class="grid grid-cols-4">
+        <input type="text" name="board_name" placeholder="版面"/>
+        <input type="text" name="author_name" placeholder="發文者"/>
+        <input type="date" name="start_datetime" placeholder="開始時間"/>
+        <input type="date" name="end_datetime" placeholder="結束時間"/>
+    </form>
 
     <!-- 資料表頭 -->
-    <div class="grid grid-cols-6 bg-gray-200 font-semibold text-center py-2 rounded">
+    <div class="grid grid-cols-6">
         <div>文章標題</div>
         <div>發文者</div>
         <div>內文</div>
@@ -45,23 +60,10 @@
     </div>
 
     <!-- 資料列 -->
-    <form action="#">
-        <div id="show-data">
+    <div id="show-data">
 
-        </div>
-    </form>
+    </div>
 
-    <!-- 新增欄位 -->
-    <form action="/api/posts/form" method="POST">
-        <div>
-            <input type="text" name="title" placeholder="文章標題" class="border p-2 rounded"/>
-            <input type="text" name="author_name" placeholder="發文者" class="border p-2 rounded"/>
-            <input type="text" name="content" placeholder="內文" class="border p-2 rounded"/>
-<!--            <input type="date" class="border p-2 rounded"/>-->
-            <input type="text" name="board_name" placeholder="版面" class="border p-2 rounded"/>
-            <button>新增</button>
-        </div>
-    </form>
 
 </div>
 </body>
@@ -75,26 +77,103 @@
                 let container = document.querySelector("#show-data");
                 data.forEach(post => {
                     console.log(post);
-                    const row = document.createElement('div');
-                    row.className = "grid grid-cols-6 bg-white p-2 border rounded";
+                    const row = document.createElement('form');
+                    row.className = "grid grid-cols-6";
+                    row.method = "PUT"
+                    row.action = "/api/posts/form/'${post.id}'"
 
-                    // language=HTML
+
                     row.innerHTML = `
-                        <input type="text" value="${post.title}" class="border p-1 rounded text-center"/>
-                        <input type="text" value="${post.author.name}" class="border p-1 rounded text-center"/>
-                        <input type="text" value="${post.content}" class="border p-1 rounded text-center"/>
-                        <input type="text" value="${post.board.name}" class="border p-1 rounded text-center"/>
-                        <input type="datetime-local" value="${post.created_at}" class="border p-1 rounded text-center"/>
+                        <input type="text" name="title" value="${post.title}"/>
+                        <input type="text" name="author_name" value="${post.author.name}"/>
+                        <input type="text" name="content" value="${post.content}"/>
+                        <input type="text" name="board_name" value="${post.board.name}"/>
+                        <input type="datetime-local" name="created_at" value="${post.created_at}"/>
                         <div>
-                            <button class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">修改
+                            <button type="submit">修改
                             </button>
-                            <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">刪除
+                            <button onclick="delete_post(${post.id})">刪除
                             </button>
                         </div>
                     `;
 
                     container.appendChild(row);
                 });
+            })
+            .catch(err => console.error(err));
+    }
+
+    function filterPostData() {
+        const form = document.querySelector("#post-filter");
+        const formData = new FormData(form);
+        const query = new URLSearchParams();
+
+        for (const [key, value] of formData.entries()) {
+            if (value.trim() !== "") {
+                query.append(key, value);
+            }
+        }
+
+        fetch(`/api/statistics?${query.toString()}`, {
+            method: 'GET'
+        })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Filtered posts:", data);
+
+                let container = document.querySelector("#show-data");
+                container.innerHTML = '';
+                data.forEach(post => {
+                    console.log(post);
+                    const row = document.createElement('form');
+                    row.className = "grid grid-cols-6";
+                    row.method = "PUT"
+                    row.action = "/api/posts/form/'${post.id}'"
+
+
+                    row.innerHTML = `
+                        <input type="text" name="title" value="${post.title}"/>
+                        <input type="text" name="author_name" value="${post.author.name}"/>
+                        <input type="text" name="content" value="${post.content}"/>
+                        <input type="text" name="board_name" value="${post.board.name}"/>
+                        <input type="datetime-local" name="created_at" value="${post.created_at}"/>
+                        <div>
+                            <button type="button">修改
+                            </button>
+                            <button type="button" onclick="delete_post(${post.id})">刪除
+                            </button>
+                        </div>
+                    `;
+
+                    container.appendChild(row);
+                });
+            })
+            .catch(err => console.error(err));
+    }
+
+    function add_post() {
+        const form = document.querySelector("#add-post-form");
+        const formData = new FormData(form);
+
+        fetch(`/api/posts/form`, {
+            method: 'POST',
+            body: formData
+        })
+            .then(res => res.json())
+            .then(data => {
+                console.log(data);
+            })
+            .catch(err => console.error(err));
+    }
+
+    function delete_post(post_id) {
+        fetch(`/api/posts/${post_id}`, {
+            method: 'DELETE'
+        })
+            .then(res => res.json())
+            .then(data => {
+                console.log(data);
+
             })
             .catch(err => console.error(err));
     }

@@ -126,15 +126,9 @@
         if (mode === "next") {
             offset += limit;
         } else if (mode === "prev") {
-            offset = Math.max(offset - limit, 0);  // 避免負數
+            offset = Math.max(offset - limit, 0);
         }
-
-        // 更新網址參數
-        params.set("limit", limit);
-        params.set("offset", offset);
-
-        // 重新導向到新的網址
-        window.location.search = params.toString();
+        getPostData(limit, offset);
     }
 
     function closePost() {
@@ -194,10 +188,10 @@
             .catch(err => console.error(err));
     }
 
-    function getPostData() {
-        let params = new URLSearchParams(window.location.search);
-        let limit = params.get("limit") || '50';
-        let offset = params.get("offset") || '0';
+    function getPostData(limit=50, offset=0) {
+        // let params = new URLSearchParams(window.location.search);
+        // limit = params.get("limit") || 50;
+        // offset = params.get("offset") || 0;
         let form = document.querySelector("#post-filter");
         let formData = new FormData(form);
         let query = new URLSearchParams();

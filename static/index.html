@@ -20,7 +20,7 @@
 
         .grid-cols-6 > * {
             width: 100%;
-            max-height: 300px;
+            max-height: 200px;
             overflow-y: auto;
             border-bottom: solid #000000 1px;
         }
@@ -60,7 +60,7 @@
     <div id="msg"></div>
 
     <!-- 新增欄位 -->
-    <div>新增文章</div>
+    <div>新增文章(新增 POST)</div>
     <form id="add-post-form">
         <div>
             <input type="text" name="title" placeholder="文章標題"/>
@@ -75,8 +75,8 @@
     <hr/>
 
     <!-- 篩選區 -->
-    <div>篩選文章</div>
-    <form id="post-filter" onchange="filterPostData(); getStatistics();" class="grid grid-cols-4">
+    <div>篩選文章(查詢 GET)</div>
+    <form id="post-filter" onchange="getPostData(); getStatistics();" class="grid grid-cols-4">
         <input type="text" name="author_name" placeholder="發文者"/>
         <input type="text" name="board_name" placeholder="版面"/>
         <input type="date" name="start_datetime" placeholder="開始時間"/>
@@ -104,6 +104,10 @@
 
     </div>
 
+    <div>
+        <button type="button" onclick="flipPage('prev')">上一頁</button>
+        <button type="button" onclick="flipPage('next')">下一頁</button>
+    </div>
 
 </div>
 </body>
@@ -114,13 +118,32 @@
         location.reload();
     }
 
+    function flipPage(mode) {
+        let params = new URLSearchParams(window.location.search);
+        let limit = parseInt(params.get("limit")) || 50;
+        let offset = parseInt(params.get("offset")) || 0;
+
+        if (mode === "next") {
+            offset += limit;
+        } else if (mode === "prev") {
+            offset = Math.max(offset - limit, 0);  // 避免負數
+        }
+
+        // 更新網址參數
+        params.set("limit", limit);
+        params.set("offset", offset);
+
+        // 重新導向到新的網址
+        window.location.search = params.toString();
+    }
+
     function closePost() {
         document.getElementById("show-one-post").style.display = "none";
     }
 
     function createPostForm(post, container) {
         // console.log(post);
-        const row = document.createElement('div');
+        let row = document.createElement('div');
         row.className = "grid grid-cols-6";
         row.innerHTML = `
                     <div>
@@ -142,7 +165,6 @@
                         <button type="button" onclick="getOnePostData(${post.id})">編輯</button>
                     </div>
                     `;
-
         container.appendChild(row);
     }
 
@@ -162,33 +184,23 @@
                                         <input type="text" name="board_name" value="${post.board.name}"/>
                                         <input type="datetime-local" name="created_at" value="${post.created_at}"/>
                                         <div>
-                                            <button type="button" onclick="updatePost(${post.id})">修改</button>
-                                            <button type="button" onclick="deletePost(${post.id})">刪除</button>
+                                            <button type="button" onclick="updatePost(${post.id})">修改(PUT)</button>
+                                            <button type="button" onclick="deletePost(${post.id})">刪除(DELETE)</button>
                                         </div>
                                     </form>
                                     <button onclick="closePost()">關閉</button>
                                     `;
-
             })
             .catch(err => console.error(err));
     }
 
     function getPostData() {
-        fetch('/api/posts', {method: 'GET'})
-            .then(res => res.json())
-            .then(data => {
-                let container = document.querySelector("#show-data");
-                data.forEach(post => {
-                    createPostForm(post, container)
-                });
-            })
-            .catch(err => console.error(err));
-    }
-
-    function filterPostData() {
-        const form = document.querySelector("#post-filter");
-        const formData = new FormData(form);
-        const query = new URLSearchParams();
+        let params = new URLSearchParams(window.location.search);
+        let limit = params.get("limit") || '50';
+        let offset = params.get("offset") || '0';
+        let form = document.querySelector("#post-filter");
+        let formData = new FormData(form);
+        let query = new URLSearchParams();
 
         for (const [key, value] of formData.entries()) {
             if (value.trim() !== "") {
@@ -196,11 +208,10 @@
             }
         }
 
-        fetch(`/api/posts?${query.toString()}`, {method: 'GET'})
+        fetch(`/api/posts?${query.toString()}&offset=${offset}&limit=${limit}`, {method: 'GET'})
             .then(res => res.json())
             .then(data => {
-                console.log("Filtered posts:", data);
-
+                console.log(`/api/posts?offset=${offset}&limit=${limit}&${query.toString()}`)
                 let container = document.querySelector("#show-data");
                 container.innerHTML = '';
                 data.forEach(post => {
@@ -211,9 +222,9 @@
     }
 
     function getStatistics() {
-        const form = document.querySelector("#post-filter");
-        const formData = new FormData(form);
-        const query = new URLSearchParams();
+        let form = document.querySelector("#post-filter");
+        let formData = new FormData(form);
+        let query = new URLSearchParams();
 
         for (const [key, value] of formData.entries()) {
             if (value.trim() !== "") {
@@ -233,8 +244,8 @@
     }
 
     function addPost() {
-        const form = document.querySelector("#add-post-form");
-        const formData = new FormData(form);
+        let form = document.querySelector("#add-post-form");
+        let formData = new FormData(form);
 
         fetch(`/api/posts/form`, {
             method: 'POST',
@@ -252,8 +263,8 @@
     }
 
     function updatePost(post_id) {
-        const form = document.querySelector("#update-post-" + post_id);
-        const formData = new FormData(form);
+        let form = document.querySelector("#update-post-" + post_id);
+        let formData = new FormData(form);
 
         fetch(`/api/posts/form/${post_id}`, {
             method: 'PUT',

@@ -1,8 +1,13 @@
+
 測試程式的目的：
 程式碼維護 -> 不論隨時間或負責人變更，若能有系統的撰寫測試程式，回過頭維護、抓錯時會更加方便
 
+單元測試關注的是測試程式本身邏輯，所以必須要把外部依賴（Database、File System IO）全部排除掉才有辦法往下進行
 
 Mock
-
-
 MagicMock => 假函式，替代函式
+
+
+pytest:
+程式碼覆蓋率：pytest-cov
+set PYTHONPATH=. && pytest --cov=your_package_or_module tests/

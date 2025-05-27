@@ -127,11 +127,9 @@ def get_post_filter_by(db: Session, posts_limit=50, posts_offset=0, **filters):
     return query_filter.limit(posts_limit).offset(posts_offset).all()
 
 
-def get_post_by_search_dic(
+def get_query_by_search_dic(
         db: Session,
-        post_search: PostSearch,
-        posts_limit=50,
-        posts_offset=0
+        post_search: PostSearch
 ):
     query = db.query(Post).options(
         joinedload(Post.author),
@@ -150,10 +148,7 @@ def get_post_by_search_dic(
     if post_search.end_datetime:
         query = query.filter(Post.created_at <= post_search.end_datetime)
 
-    return query.order_by(Post.created_at.desc()) \
-        .offset(posts_offset) \
-        .limit(posts_limit) \
-        .all()
+    return query.order_by(Post.created_at.desc())
 
 
 def get_existing_post_keys(db: Session, posts: list[PostCrawl]):
@@ -206,7 +201,7 @@ def create_posts_bulk(db: Session, posts: list[PostCrawl], batch_size: int = 20)
                 existing_keys.add(post_key)
 
                 # 處理留言
-                create_comments(db, new_post, post_input, user_map)
+                create_comments_from_postcrawl(db, new_post, post_input, user_map)
 
                 created_posts.append(new_post)
 
@@ -291,7 +286,7 @@ def comment_input_pydantic_to_sqlalchemy(comment_input: CommentCrawl, user_id: i
     )
 
 
-def create_comments(db: Session, new_post, post_input, user_map):
+def create_comments_from_postcrawl(db: Session, new_post, post_input: PostCrawl, user_map):
     existing_comment_rows = db.query(
         Comment.user, Comment.content, Comment.created_at
     ).filter_by(post_id=new_post.id).all()

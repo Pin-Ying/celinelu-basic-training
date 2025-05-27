@@ -4,13 +4,16 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 import pytz
 
-from db.crud import get_post_filter_by, get_post_by_search_dic, create_post, update_post_from_id, delete_post_from_id
+from db.crud import get_post_filter_by, create_post, update_post_from_id, delete_post_from_id, \
+    get_query_by_search_dic
 from db.database import SessionLocal
+from model.ptt_content import Post
 from schema.ptt_content import PostSchema, PostSearch, AuthorSchema, BoardSchema, PostSchemaResponse
 
 app = FastAPI()
 router = APIRouter()
 tz = pytz.timezone("Asia/Taipei")
+
 
 def get_db():
     db = SessionLocal()
@@ -62,8 +65,12 @@ def handle_create_post(db, post_data: PostSchema):
 
 # --- GET ---
 @router.get("/api/posts", response_model=List[PostSchema])
-async def get_all_posts(db=Depends(get_db), limit=50, offset=0):
-    return get_post_filter_by(db, posts_limit=limit, posts_offset=offset)
+async def get_posts(search_filter: PostSearch = Depends(post_search_query),
+                    db=Depends(get_db),
+                    limit=50,
+                    offset=0):
+    all_posts = get_query_by_search_dic(db, search_filter)
+    return all_posts.offset(offset).limit(limit).all()
 
 
 @router.get("/api/posts/{post_id}", response_model=List[PostSchema])
@@ -72,12 +79,18 @@ async def get_post(db=Depends(get_db), post_id=None):
     return the_post
 
 
-@router.get("/api/statistics", response_model=List[PostSchema])
+@router.get("/api/statistics")
 async def get_statistics(search_filter: PostSearch = Depends(post_search_query),
-                         db=Depends(get_db),
-                         limit=50,
-                         offset=0):
-    return get_post_by_search_dic(db, search_filter, posts_limit=limit, posts_offset=offset)
+                         db=Depends(get_db)):
+    query = get_query_by_search_dic(db, search_filter)
+
+    # 統計符合條件的總數
+    total_count = query.count()
+
+    return {
+        "search_filter": search_filter,
+        "result_count": total_count
+    }
 
 
 # --- POST ---

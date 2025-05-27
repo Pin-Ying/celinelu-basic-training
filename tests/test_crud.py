@@ -1,123 +1,153 @@
-import pytest
-from unittest.mock import MagicMock
 from datetime import datetime
+from unittest import mock
+from unittest.mock import MagicMock
+
+import pytest
 
 from db.crud import (
-    get_or_create_user,
-    prepare_users_from_posts,
-    post_crawl_pydantic_to_sqlalchemy,
-    post_schema_pydantic_to_sqlalchemy,
-    post_schema_sqlalchemy_to_pydantic,
-    create_post,
-    get_post_by_search_dic,
-    get_or_create_board,
-    get_all_boards,
-    create_comments,
-    log_crawl_result,
+    get_or_create_user, prepare_users_from_posts, create_post, create_posts_bulk,
+    get_newest_post, get_post_filter_by, get_post_by_search_dic,
+    update_post_from_id, delete_post_from_id, get_or_create_board,
+    log_crawl_result, get_all_boards
 )
-from model.ptt_content import Post, User, Board, Comment, Log
-from schema.ptt_content import PostCrawl, CommentCrawl, PostSearch, PostSchema, BoardSchema, AuthorSchema
+from model.ptt_content import Post, User, Board
+from schema.ptt_content import PostCrawl, CommentCrawl, PostSchema, AuthorSchema, BoardSchema, PostSearch
 
 
-def test_get_or_create_user_found():
-    mock_db = MagicMock()
-    mock_db.query().filter_by().first.return_value = User(id=1, name="alice")
-    user = get_or_create_user(mock_db, "alice")
-    assert user.name == "alice"
+# -------- Fixtures --------
+@pytest.fixture
+def db():
+    return MagicMock()
 
 
-def test_get_or_create_user_create():
-    mock_db = MagicMock()
-    mock_db.query().filter_by().first.side_effect = [None, User(id=1, name="bob")]
-    user = get_or_create_user(mock_db, "bob")
-    assert user.name == "bob"
+@pytest.fixture
+def dummy_postcrawl():
+    return PostCrawl(
+        title="Sample Title",
+        content="Sample Content",
+        created_at=datetime.now(),
+        board_id=1,
+        author="test_user",
+        comments=[
+            CommentCrawl(user="comment_user", content="Nice post!", created_at=datetime.now().isoformat())
+        ]
+    )
 
 
-def test_prepare_users_from_posts():
-    mock_db = MagicMock()
-    posts = [
-        PostCrawl(title="t1", content="c1", created_at=datetime.now(), board_id=1, author="alice", comments=[]),
-        PostCrawl(title="t2", content="c2", created_at=datetime.now(), board_id=1, author="bob", comments=[
-            CommentCrawl(user="carol", content="comment", created_at=datetime.now().isoformat())
-        ])
-    ]
-    mock_db.query().filter().all.return_value = []
-    users = prepare_users_from_posts(mock_db, posts)
-    assert set(users.keys()) == {"alice", "bob", "carol"}
+@pytest.fixture
+def dummy_postschema():
+    return PostSchema(
+        id=None,
+        title="Test Post",
+        content="Content here",
+        created_at=datetime.now(),
+        board=BoardSchema(name="test_board"),
+        author=AuthorSchema(name="test_author")
+    )
 
 
-def test_post_pydantic_conversions():
-    dt = datetime.now()
-    post_crawl = PostCrawl(title="t", content="c", created_at=dt, board_id=1, author="a", comments=[])
-    post_model = post_crawl_pydantic_to_sqlalchemy(post_crawl, author_id=1)
-    assert post_model.title == "t"
-
-    post_schema = PostSchema(id=None, title="t", content="c", created_at=dt,
-                             board=BoardSchema(name="b"), author=AuthorSchema(name="a"))
-    post_model = post_schema_pydantic_to_sqlalchemy(post_schema, 1, 2)
-    assert post_model.board_id == 2
-
-    post = Post(id=1, title="t", content="c", created_at=dt,
-                author=User(id=1, name="a"), board=Board(id=1, name="b"))
-    schema = post_schema_sqlalchemy_to_pydantic(post)
-    assert schema.title == "t"
-    assert schema.author.name == "a"
+# -------- Tests for User --------
+def test_get_or_create_user_existing(db):
+    db.query().filter_by().first.return_value = User(id=1, name="test")
+    user = get_or_create_user(db, "test")
+    assert user.name == "test"
 
 
-def test_create_post_success():
-    mock_db = MagicMock()
-    mock_db.query().filter_by().first.side_effect = [None, None, Board(id=1, name="NBA")]
-    mock_db.flush.side_effect = None
-    post_schema = PostSchema(id=None, title="t", content="c", created_at=datetime.now(),
-                             board=BoardSchema(name="NBA"), author=AuthorSchema(name="a"))
-    response = create_post(mock_db, post_schema)
+def test_prepare_users_from_posts(db, dummy_postcrawl):
+    db.query().filter().all.return_value = []
+    user_map = prepare_users_from_posts(db, [dummy_postcrawl])
+    assert db.add_all.call_count == 1
+    assert "test_user" in user_map
+    assert "comment_user" in user_map
+
+
+# -------- Tests for Post --------
+def test_create_post_success(db, dummy_postschema):
+    with mock.patch("db.crud.get_or_create_user") as mock_get_or_create_user:
+        mock_get_or_create_user.return_value = User(id=1, name="test_author")
+    with mock.patch("db.crud.get_or_create_board") as mock_get_or_create_board:
+        mock_get_or_create_board.return_value = Board(id=1, name="test_board")
+    pose_response = create_post(db, dummy_postschema)
+    assert pose_response.result == "success"
+
+
+def test_create_posts_bulk_success(db, dummy_postcrawl):
+    with mock.patch("db.crud.get_existing_post_keys") as mock_get_existing_post_keys:
+        mock_get_existing_post_keys.return_value = {}
+    created = create_posts_bulk(db, [dummy_postcrawl])
+    assert len(created) == 1
+    assert isinstance(created[0], Post)
+    assert db.add.call_count >= 2  # post, comment
+    assert db.commit.called
+
+
+def test_get_newest_post(db):
+    post = Post(id=1, title="Newest", created_at=datetime.now())
+    db.query().filter_by().order_by().first.return_value = post
+    result = get_newest_post(db, 1)
+    assert result.title == "Newest"
+
+
+def test_get_post_filter_by(db):
+    db.query().filter_by().order_by().limit().offset().all.return_value = [Post()]
+    results = get_post_filter_by(db, posts_limit=5, posts_offset=0, board_id=1)
+    assert isinstance(results, list)
+
+
+def test_get_post_by_search_dic(db):
+    db.query().options().order_by().offset().limit().all.return_value = [Post()]
+    result = get_post_by_search_dic(db, PostSearch(), 5, 0)
+    assert isinstance(result, list)
+
+
+def test_update_post_from_id_success(db, dummy_postschema):
+    db.query().filter().first.return_value = Post(id=1)
+    response = update_post_from_id(db, 1, dummy_postschema)
     assert response.result == "success"
+    assert response.data.id == 1
 
 
-def test_get_post_by_search_dic():
-    mock_db = MagicMock()
-    post_search = PostSearch(
-        author=AuthorSchema(name="a"),
-        board=BoardSchema(name="NBA"),
-        start_datetime=datetime(2023, 1, 1),
-        end_datetime=datetime(2024, 1, 1)
-    )
-    mock_query = mock_db.query().options().join().filter().join().filter().filter().filter().order_by().offset().limit()
-    mock_query.all.return_value = ["post_match"]
-    posts = get_post_by_search_dic(mock_db, post_search)
-    assert isinstance(posts, list)
-    assert len(posts) == 1
+def test_delete_post_from_id_success(db):
+    post = Post(id=1, title="Del", content="x", created_at=datetime.now(), board=Board(name="test_board"),
+                author=User(name="test_user"))
+    db.query().filter().first.return_value = post
+    response = delete_post_from_id(db, 1)
+    assert response.result == "success"
+    assert response.data.id == 1
 
 
-def test_get_or_create_board():
-    mock_db = MagicMock()
-    mock_db.query().filter_by().first.side_effect = [None, Board(id=1, name="NBA")]
-    board = get_or_create_board(mock_db, "NBA")
-    assert board.name == "NBA"
+# -------- Tests for Board --------
+def test_get_or_create_board_new(db):
+    db.query().filter_by().first.return_value = None
+    board = get_or_create_board(db, "test_board")
+    assert board.name == "test_board"
 
 
-def test_get_all_boards():
-    mock_db = MagicMock()
-    mock_db.query().all.return_value = [Board(id=1, name="NBA"), Board(id=2, name="Gossiping")]
-    boards = get_all_boards(mock_db)
-    assert boards == {"NBA": 1, "Gossiping": 2}
+def test_get_all_boards(db):
+    db.query().all.return_value = [Board(id=1, name="test")]
+    boards = get_all_boards(db)
+    assert boards["test"] == 1
 
 
-def test_create_comments():
-    mock_db = MagicMock()
-    user_map = {"alice": User(id=1, name="alice")}
-    post_input = PostCrawl(
-        title="t", content="c", created_at=datetime.now(), board_id=1, author="alice",
-        comments=[CommentCrawl(user="alice", content="hi", created_at=datetime.now().isoformat())]
-    )
-    new_post = Post(id=1)
-    mock_db.query().filter_by().all.return_value = []
-    create_comments(mock_db, new_post, post_input, user_map)
-    mock_db.add.assert_called()
+# -------- Tests for Log --------
+def test_log_crawl_result(db):
+    log_crawl_result(db, "Crawling success", "INFO")
+    db.add.assert_called_once()
+    db.commit.assert_called_once()
 
-
-def test_log_crawl_result():
-    mock_db = MagicMock()
-    log_crawl_result(mock_db, "test message", "DEBUG")
-    mock_db.add.assert_called()
-    mock_db.commit.assert_called()
+# # -------- Tests for init/clean --------
+# def test_create_default_runs():
+#     # 不測試 DB 實作，只測試是否會成功執行
+#     try:
+#         create_default()
+#         assert True
+#     except Exception:
+#         assert False
+#
+#
+# def test_clean_tables_runs():
+#     try:
+#         clean_tables()
+#         assert True
+#     except Exception:
+#         assert False

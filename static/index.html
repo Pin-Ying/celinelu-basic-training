@@ -18,19 +18,36 @@
             grid-template-columns: repeat(6, 1fr);
         }
 
+        .grid-cols-6 > * {
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            border-bottom: solid #000000 1px;
+        }
+
+        .show-post-form {
+            display: grid;
+        }
+
+        textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+
         #show-one-post {
             display: none;
             position: fixed;
             top: 30%;
             left: 50%;
-            width: 40%;
+            width: 70%;
+            min-height: 40%;
             max-height: 50%;
             transform: translateX(-50%);
             background: white;
             border: 1px solid #ccc;
             padding: 20px;
             z-index: 9999;
-            overflow-y: scroll;
+            overflow-y: auto;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
             border-radius: 10px;
         }
@@ -59,12 +76,14 @@
 
     <!-- 篩選區 -->
     <div>篩選文章</div>
-    <form id="post-filter" onchange="filterPostData()" class="grid grid-cols-4">
-        <input type="text" name="board_name" placeholder="版面"/>
+    <form id="post-filter" onchange="filterPostData(); getStatistics();" class="grid grid-cols-4">
         <input type="text" name="author_name" placeholder="發文者"/>
+        <input type="text" name="board_name" placeholder="版面"/>
         <input type="date" name="start_datetime" placeholder="開始時間"/>
         <input type="date" name="end_datetime" placeholder="結束時間"/>
     </form>
+
+    <div id="statistics-data"></div>
 
     <!-- 資料表頭 -->
     <div class="grid grid-cols-6">
@@ -73,7 +92,7 @@
         <div>內文</div>
         <div>版面</div>
         <div>發文時間</div>
-        <div>操作</div>
+        <div></div>
     </div>
 
     <!-- 資料列 -->
@@ -90,27 +109,37 @@
 </body>
 
 <script>
+    function reload(msg = "完成！") {
+        alert(msg);
+        location.reload();
+    }
+
     function closePost() {
         document.getElementById("show-one-post").style.display = "none";
     }
 
     function createPostForm(post, container) {
         // console.log(post);
-        const row = document.createElement('form');
+        const row = document.createElement('div');
         row.className = "grid grid-cols-6";
-        row.id = "update-post-" + post.id
-
-
         row.innerHTML = `
-                    <input type="text" name="title" value="${post.title}"/>
-                    <input type="text" name="author_name" value="${post.author.name}"/>
-                    <input type="text" name="content" value="${post.content}"/>
-                    <input type="text" name="board_name" value="${post.board.name}"/>
-                    <input type="datetime-local" name="created_at" value="${post.created_at}"/>
                     <div>
-                        <button type="button" onclick="getOnePostData(${post.id})">查看</button>
-                        <button type="button" onclick="updatePost(${post.id})">修改</button>
-                        <button type="button" onclick="deletePost(${post.id})">刪除</button>
+                        ${post.title}
+                    </div>
+                    <div>
+                        ${post.author.name}
+                    </div>
+                    <div>
+                        ${post.content}
+                    </div>
+                    <div>
+                        ${post.board.name}
+                    </div>
+                    <div>
+                        ${post.created_at}
+                    </div>
+                    <div>
+                        <button type="button" onclick="getOnePostData(${post.id})">編輯</button>
                     </div>
                     `;
 
@@ -126,21 +155,17 @@
                 let container = document.querySelector("#show-one-post");
                 container.style.display = 'block';
                 container.innerHTML = `
-                                    <div>
-                                        文章標題：${post.title}
-                                    </div>
-                                    <div>
-                                        發文者：${post.author.name}
-                                    </div>
-                                    <div>
-                                        內文：${post.content}
-                                    </div>
-                                    <div>
-                                        版面：${post.board.name}
-                                    </div>
-                                    <div>
-                                        發文時間：${post.created_at}
-                                    </div>
+                                    <form class="show-post-form" id="update-post-${post.id}" >
+                                        <input type="text" name="title" value="${post.title}"/>
+                                        <input type="text" name="author_name" value="${post.author.name}"/>
+                                        <textarea name="content" >${post.content}</textarea>
+                                        <input type="text" name="board_name" value="${post.board.name}"/>
+                                        <input type="datetime-local" name="created_at" value="${post.created_at}"/>
+                                        <div>
+                                            <button type="button" onclick="updatePost(${post.id})">修改</button>
+                                            <button type="button" onclick="deletePost(${post.id})">刪除</button>
+                                        </div>
+                                    </form>
                                     <button onclick="closePost()">關閉</button>
                                     `;
 
@@ -171,9 +196,7 @@
             }
         }
 
-        fetch(`/api/statistics?${query.toString()}`, {
-            method: 'GET'
-        })
+        fetch(`/api/posts?${query.toString()}`, {method: 'GET'})
             .then(res => res.json())
             .then(data => {
                 console.log("Filtered posts:", data);
@@ -183,6 +206,28 @@
                 data.forEach(post => {
                     createPostForm(post, container)
                 });
+            })
+            .catch(err => console.error(err));
+    }
+
+    function getStatistics() {
+        const form = document.querySelector("#post-filter");
+        const formData = new FormData(form);
+        const query = new URLSearchParams();
+
+        for (const [key, value] of formData.entries()) {
+            if (value.trim() !== "") {
+                query.append(key, value);
+            }
+        }
+
+        fetch(`/api/statistics?${query.toString()}`, {method: 'GET'})
+            .then(res => res.json())
+            .then(data => {
+                let container = document.querySelector("#statistics-data");
+                container.innerHTML = `
+                <div>總計：${data["result_count"]}篇文章</div>
+                `;
             })
             .catch(err => console.error(err));
     }
@@ -198,8 +243,8 @@
             .then(res => res.json())
             .then(data => {
                 if (data["result"] === "success") {
-                    console.log(data["data"]);
-                    getPostData();
+                    // console.log(data);
+                    reload();
                 }
 
             })
@@ -217,10 +262,9 @@
             .then(res => res.json())
             .then(data => {
                 if (data["result"] === "success") {
-                    console.log(data);
-                    getPostData();
+                    // console.log(data);
+                    reload();
                 }
-
             })
             .catch(err => console.error(err));
     }
@@ -232,14 +276,14 @@
             .then(res => res.json())
             .then(data => {
                 if (data["result"] === "success") {
-                    console.log(data);
-                    getPostData();
+                    // console.log(data);
+                    reload();
                 }
-
             })
             .catch(err => console.error(err));
     }
 
     getPostData();
+    getStatistics();
 </script>
 </html>

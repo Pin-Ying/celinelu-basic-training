@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 from db.database import Base, engine, SessionLocal
 from model.ptt_content import User, Post, Comment, Board, Log
 from schema.ptt_content import PostCrawl, CommentCrawl, PostSearch, PostSchema, PostSchemaResponse, BoardSchema, \
-    UserSchema, CommentSchema
+    UserSchema, CommentSchema, PostDetailSchema
 
 
 def create_default():
@@ -115,6 +115,17 @@ def post_schema_sqlalchemy_to_pydantic(post_input: Post) -> PostSchema:
         content=post_input.content,
         created_at=post_input.created_at,
         board=BoardSchema(name=post_input.board.name),
+        author=UserSchema(name=post_input.author.name)
+    )
+
+
+def post_detail_sqlalchemy_to_pydantic(post_input: Post) -> PostDetailSchema:
+    return PostDetailSchema(
+        id=post_input.id,
+        title=post_input.title,
+        content=post_input.content,
+        created_at=post_input.created_at,
+        board=BoardSchema(name=post_input.board.name),
         author=UserSchema(name=post_input.author.name),
         comments=[
             CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.created_at)
@@ -163,7 +174,7 @@ def get_post_detail_by_id(db: Session, post_id: int):
     the_post = the_post.options(joinedload(Post.comments)).first()
     if the_post is None:
         return PostSchemaResponse(result="PostNotFound")
-    post_schema = post_schema_sqlalchemy_to_pydantic(the_post)
+    post_schema = post_detail_sqlalchemy_to_pydantic(the_post)
     return PostSchemaResponse(result="success", data=post_schema)
 
 

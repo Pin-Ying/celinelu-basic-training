@@ -264,7 +264,7 @@
         let form = document.querySelector("#add-post-form");
         let formData = new FormData(form);
 
-        fetch(`/api/posts/form`, {
+        fetch(`/posts`, {
             method: 'POST',
             body: formData
         })

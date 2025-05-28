@@ -56,10 +56,13 @@ class PostSchema(BaseModel):
     created_at: Optional[datetime] = None
     author: Optional['UserSchema'] = None
     board: Optional['BoardSchema'] = None
-    comments: Optional['List[CommentSchema]'] = None
 
     class Config:
         orm_mode = True
+
+
+class PostDetailSchema(PostSchema):
+    comments: Optional['List[CommentSchema]'] = None
 
 
 class PostSearch(BaseModel):
@@ -74,7 +77,7 @@ class PostSearch(BaseModel):
 
 class PostSchemaResponse(BaseModel):
     result: str = ''
-    data: Optional[Union[PostSchema, List[PostSchema]]] = None
+    data: Optional[Union[PostSchema, PostDetailSchema, List[PostSchema]]] = None
 
     class Config:
         orm_mode = True

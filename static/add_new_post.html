@@ -5,27 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>文章管理 - Grid版</title>
     <style>
-        .grid {
-            display: grid;
-            gap: 20px;
-        }
-
-        .grid-cols-4 {
-            grid-template-columns: repeat(4, 1fr);
-        }
-
-        .grid-cols-5 {
-            grid-template-columns: repeat(5, 1fr);
-        }
-
         .grid-cols-5 > * {
             width: 100%;
             overflow-y: auto;
             border-bottom: solid #000000 1px;
-        }
-
-        .show-post-form {
-            display: grid;
         }
 
         textarea {
@@ -33,23 +16,6 @@
             resize: vertical;
         }
 
-        #show-one-post {
-            display: none;
-            position: fixed;
-            top: 30%;
-            left: 50%;
-            width: 70%;
-            min-height: 40%;
-            max-height: 50%;
-            transform: translateX(-50%);
-            background: white;
-            border: 1px solid #ccc;
-            padding: 20px;
-            z-index: 9999;
-            overflow-y: auto;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-        }
     </style>
 </head>
 <body class="p-8 bg-gray-100">
@@ -71,188 +37,10 @@
         </div>
     </form>
 
-    <hr/>
-
-    <!-- 篩選區 -->
-    <div>篩選文章(查詢 GET)</div>
-    <form id="post-filter" onchange="flipPage('default'); getStatistics();" class="grid grid-cols-4">
-        <input type="text" name="author_name" placeholder="發文者"/>
-        <input type="text" name="board_name" placeholder="版面"/>
-        <input type="date" name="start_datetime" placeholder="開始時間"/>
-        <input type="date" name="end_datetime" placeholder="結束時間"/>
-        <input type="hidden" name="offset" value="0"/>
-        <input type="number" name="limit" value="50"/>
-    </form>
-
-    <div id="statistics-data"></div>
-
-    <!-- 資料表頭 -->
-    <div class="grid grid-cols-5">
-        <div>文章標題</div>
-        <div>發文者</div>
-        <div>版面</div>
-        <div>發文時間</div>
-        <div></div>
-    </div>
-
-    <!-- 資料列 -->
-    <div id="show-data">
-
-    </div>
-
-    <div id="show-one-post">
-
-    </div>
-
-    <div>
-        <button type="button" onclick="flipPage('prev')">上一頁</button>
-        <button type="button" onclick="flipPage('next')">下一頁</button>
-    </div>
-
 </div>
 </body>
 
 <script>
-    function reload(msg = "完成！") {
-        alert(msg);
-        location.reload();
-    }
-
-    function flipPage(mode) {
-        let offset_input = document.querySelector('input[name="offset"]');
-        let offset = parseInt(offset_input.value);
-        let limit = parseInt(document.querySelector('input[name="limit"]').value);
-
-        if (mode === "default") {
-            offset_input.value = 0;
-            getPostData();
-            return;
-        }
-
-        if (mode === "next") {
-            offset += limit;
-        } else if (mode === "prev") {
-            offset = Math.max(offset - limit, 0);
-        }
-        offset_input.value = offset;
-        getPostData();
-    }
-
-    function closePost() {
-        document.getElementById("show-one-post").style.display = "none";
-    }
-
-    function createPostForm(post, container) {
-        // console.log(post);
-        let row = document.createElement('div');
-        row.className = "grid grid-cols-5";
-        row.innerHTML = `
-                    <div>
-                        ${post.title}
-                    </div>
-                    <div>
-                        ${post.author.name}
-                    </div>
-                    <div>
-                        ${post.board.name}
-                    </div>
-                    <div>
-                        ${post.created_at}
-                    </div>
-                    <div>
-                        <button type="button" onclick="getOnePostData(${post.id})">詳細內容</button>
-                    </div>
-                    `;
-        container.appendChild(row);
-    }
-
-    function getOnePostData(post_id) {
-        fetch('/api/posts/' + post_id, {method: 'GET'})
-            .then(res => res.json())
-            .then(result => {
-                if (result.result === "success") {
-                    let post = result.data;
-                    console.log(post);
-                    let container = document.querySelector("#show-one-post");
-                    container.style.display = 'block';
-                    container.innerHTML = `
-                                    <form class="show-post-form" id="update-post-${post.id}" >
-                                        <input type="text" name="title" value="${post.title}"/>
-                                        <input type="text" name="author_name" value="${post.author.name}"/>
-                                        <textarea name="content" >${post.content}</textarea>
-                                        <input type="text" name="board_name" value="${post.board.name}"/>
-                                        <input type="datetime-local" name="created_at" value="${post.created_at}"/>
-                                        <div>
-                                            <button type="button" onclick="updatePost(${post.id})">修改(PUT)</button>
-                                            <button type="button" onclick="deletePost(${post.id})">刪除(DELETE)</button>
-                                            <button type="button" onclick="closePost()">關閉</button>
-                                        </div>
-                                    </form>
-                                    `;
-                    if (post.comments.length > 0) {
-                        console.log("comment!");
-                        post.comments.forEach(comment => {
-                            let row = document.createElement('div');
-                            row.innerHTML = `
-                                                <span>${comment.user.name}</span>
-                                                <span>：${comment.content}</span>
-                                                <span>(${comment.created_at})</span>
-                                            `;
-                            container.appendChild(row);
-                        });
-                    }
-                } else {
-                    alert(result.result)
-                }
-            })
-            .catch(err => console.error(err));
-    }
-
-    function getPostData() {
-        let form = document.querySelector("#post-filter");
-        let formData = new FormData(form);
-        let query = new URLSearchParams();
-
-        for (const [key, value] of formData.entries()) {
-            if (value.trim() !== "") {
-                query.append(key, value);
-            }
-        }
-
-        fetch(`/api/posts?${query.toString()}`, {method: 'GET'})
-            .then(res => res.json())
-            .then(result => {
-                let data = result.data;
-                console.log(`/api/posts?${query.toString()}`)
-                let container = document.querySelector("#show-data");
-                container.innerHTML = '';
-                data.forEach(post => {
-                    createPostForm(post, container)
-                });
-            })
-            .catch(err => console.error(err));
-    }
-
-    function getStatistics() {
-        let form = document.querySelector("#post-filter");
-        let formData = new FormData(form);
-        let query = new URLSearchParams();
-
-        for (const [key, value] of formData.entries()) {
-            if (value.trim() !== "") {
-                query.append(key, value);
-            }
-        }
-
-        fetch(`/api/statistics?${query.toString()}`, {method: 'GET'})
-            .then(res => res.json())
-            .then(data => {
-                let container = document.querySelector("#statistics-data");
-                container.innerHTML = `<div>總計：${data["result_count"]}篇文章</div>`;
-            })
-            .catch(err => console.error(err));
-    }
-
     function addPost() {
         let form = document.querySelector("#add-post-form");
         let formData = new FormData(form);
@@ -271,40 +59,5 @@
             })
             .catch(err => console.error(err));
     }
-
-    function updatePost(post_id) {
-        let form = document.querySelector("#update-post-" + post_id);
-        let formData = new FormData(form);
-
-        fetch(`/api/posts/form/${post_id}`, {
-            method: 'PUT',
-            body: formData
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data["result"] === "success") {
-                    // console.log(data);
-                    reload();
-                }
-            })
-            .catch(err => console.error(err));
-    }
-
-    function deletePost(post_id) {
-        fetch(`/api/posts/${post_id}`, {
-            method: 'DELETE'
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data["result"] === "success") {
-                    // console.log(data);
-                    reload();
-                }
-            })
-            .catch(err => console.error(err));
-    }
-
-    getPostData();
-    getStatistics();
 </script>
 </html>

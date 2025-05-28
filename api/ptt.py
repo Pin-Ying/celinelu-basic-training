@@ -64,7 +64,8 @@ def handle_create_post(db, post_data: PostSchema):
 
 
 # --- GET ---
-@router.get("/api/posts", response_model=PostSchemaResponse)
+@router.get("/api/posts", response_model=PostSchemaResponse,
+            response_model_exclude={"data": {"__all__": {"comments"}}})
 async def get_posts(search_filter: PostSearch = Depends(post_search_query),
                     db=Depends(get_db),
                     limit=50,

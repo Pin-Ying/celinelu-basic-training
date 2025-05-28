@@ -25,13 +25,13 @@ def db():
 @pytest.fixture
 def dummy_postcrawl():
     return PostCrawl(
-        title="Sample Title",
-        content="Sample Content",
+        title="test_post_crawl",
+        content="test_content",
         created_at=datetime.now(),
         board_id=1,
         author="test_user",
         comments=[
-            CommentCrawl(user="comment_user", content="Nice post!", created_at=datetime.now().isoformat())
+            CommentCrawl(user="comment_user", content="test_comment_content", created_at=datetime.now().isoformat())
         ]
     )
 
@@ -40,13 +40,13 @@ def dummy_postcrawl():
 def dummy_postschema():
     return PostSchema(
         id=None,
-        title="Test Post",
-        content="Content here",
+        title="test_post_schema",
+        content="test_content",
         created_at=datetime.now(),
         board=BoardSchema(name="test_board"),
         author=UserSchema(name="test_author"),
         comments=[
-            CommentSchema(user=UserSchema(name="comment_user"), content="Nice post!",
+            CommentSchema(user=UserSchema(name="comment_user"), content="test_comment_content",
                           created_at=datetime.now().isoformat())
         ]
     )
@@ -72,7 +72,7 @@ def dummy_model_post():
     )
     the_comment = Comment(
         id=1,
-        content="test-comment-content",
+        content="test_comment_content",
         created_at="2025-05-27T15:30:00",
         post_id=1,
         user_id=1,
@@ -80,8 +80,8 @@ def dummy_model_post():
     )
     return Post(
         id=1,
-        title="test-post",
-        content="test-content",
+        title="test_post",
+        content="test_content",
         created_at=datetime(2025, 5, 27, 12, 0, 0),
         author=the_user,
         board=the_board,
@@ -106,21 +106,27 @@ def test_prepare_users_from_posts(db, dummy_postcrawl):
 
 # -------- Tests for Post --------
 def test_create_post_success(db, dummy_postschema):
-    with mock.patch("db.crud.get_or_create_user") as mock_get_or_create_user:
+    with mock.patch("db.crud.get_or_create_user") as mock_get_or_create_user, \
+         mock.patch("db.crud.get_or_create_board") as mock_get_or_create_board:
+
         mock_get_or_create_user.return_value = User(id=1, name="test_author")
-    with mock.patch("db.crud.get_or_create_board") as mock_get_or_create_board:
         mock_get_or_create_board.return_value = Board(id=1, name="test_board")
-    pose_response = create_post(db, dummy_postschema)
-    assert pose_response.result == "success"
+
+        result = create_post(db, dummy_postschema)
+
+        assert result.result == "success"
+        assert result.data.title == dummy_postschema.title
+        assert result.data.created_at == dummy_postschema.created_at
 
 
 def test_create_posts_bulk_success(db, dummy_postcrawl):
     with mock.patch("db.crud.get_existing_post_keys") as mock_get_existing_post_keys:
-        mock_get_existing_post_keys.return_value = {}
-    created = create_posts_bulk(db, [dummy_postcrawl])
-    assert len(created) == 1
-    assert isinstance(created[0], Post)
-    assert db.add.call_count >= 2  # post, comment
+        mock_get_existing_post_keys.return_value = set()
+        result = create_posts_bulk(db, [dummy_postcrawl])
+    assert len(result) == 1
+    assert isinstance(result[0], Post)
+    assert result[0].title == dummy_postcrawl.title
+    assert db.add.call_count == 2  # 1 post, 1 comment
     assert db.commit.called
 
 
@@ -131,18 +137,20 @@ def test_get_newest_post(db):
     assert result.title == "Newest"
 
 
-def test_get_post_detail_by_id(db, dummy_model_post):
-    mock_query = db.query.return_value
-    mock_filter_by = mock_query.filter_by.return_value
-    mock_join = mock_filter_by.join.return_value
-    mock_filter = mock_join.filter.return_value
-    mock_filter.first.return_value = dummy_model_post
+def test_get_posts_by_search_dic(db, dummy_model_post):
+    with mock.patch("db.crud.get_query_by_search_dic") as mock_get_query_by_search_dic:
+        mock_query = mock.MagicMock()
+        mock_query.offset.return_value = mock_query
+        mock_query.limit.return_value = mock_query
+        mock_query.all.return_value = [dummy_model_post]
+        mock_get_query_by_search_dic.return_value = mock_query
 
-    result = get_post_detail_by_id(db, 1)
+        search_filter = PostSearch()
+        result = get_posts_by_search_dic(db, search_filter)
 
     assert result.result == "success"
-    assert result.data.id == 1
-    assert result.data.comments[0].content == "test-comment-content"
+    assert len(result.data) > 0
+    assert result.data[0].id == 1
 
 
 def test_update_post_from_id_success(db, dummy_postschema):

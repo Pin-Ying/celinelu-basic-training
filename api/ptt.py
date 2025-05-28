@@ -1,14 +1,14 @@
-from fastapi import APIRouter, FastAPI, Depends, Query, Form, Body
-from typing import List, Optional, Any, Coroutine
-from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
-import pytz
+from typing import List, Optional
 
-from db.crud import get_post_filter_by, create_post, update_post_from_id, delete_post_from_id, \
-    get_query_by_search_dic
+import pytz
+from fastapi import APIRouter, FastAPI, Depends, Query, Form, Body
+from sqlalchemy.exc import SQLAlchemyError
+
+from db.crud import create_post, update_post_from_id, delete_post_from_id, \
+    get_query_by_search_dic, get_post_detail_by_id, get_posts_by_search_dic
 from db.database import SessionLocal
-from model.ptt_content import Post
-from schema.ptt_content import PostSchema, PostSearch, AuthorSchema, BoardSchema, PostSchemaResponse
+from schema.ptt_content import PostSchema, PostSearch, UserSchema, BoardSchema, PostSchemaResponse
 
 app = FastAPI()
 router = APIRouter()
@@ -36,7 +36,7 @@ def post_search_query(
         end_datetime: Optional[datetime] = Query(None),
 ) -> PostSearch:
     return PostSearch(
-        author=AuthorSchema(name=author_name) if author_name else None,
+        author=UserSchema(name=author_name) if author_name else None,
         board=BoardSchema(name=board_name) if board_name else None,
         start_datetime=start_datetime,
         end_datetime=end_datetime,
@@ -53,7 +53,7 @@ def form_to_postschema(
     return PostSchema(
         title=title,
         content=content,
-        author=AuthorSchema(name=author_name) if author_name else None,
+        author=UserSchema(name=author_name) if author_name else None,
         board=BoardSchema(name=board_name) if board_name else None,
         created_at=created_at if created_at else datetime.now(tz),
     )
@@ -64,19 +64,17 @@ def handle_create_post(db, post_data: PostSchema):
 
 
 # --- GET ---
-@router.get("/api/posts", response_model=List[PostSchema])
+@router.get("/api/posts", response_model=PostSchemaResponse)
 async def get_posts(search_filter: PostSearch = Depends(post_search_query),
                     db=Depends(get_db),
                     limit=50,
                     offset=0):
-    all_posts = get_query_by_search_dic(db, search_filter)
-    return all_posts.offset(offset).limit(limit).all()
+    return get_posts_by_search_dic(db, search_filter, limit, offset)
 
 
-@router.get("/api/posts/{post_id}", response_model=List[PostSchema])
+@router.get("/api/posts/{post_id}", response_model=PostSchemaResponse)
 async def get_post(db=Depends(get_db), post_id=None):
-    the_post = get_post_filter_by(db, **{'id': post_id})
-    return the_post
+    return get_post_detail_by_id(db, post_id)
 
 
 @router.get("/api/statistics")

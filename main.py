@@ -16,3 +16,5 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 @app.get("/")
 def read_index():
     return FileResponse("static/index.html")
+
+

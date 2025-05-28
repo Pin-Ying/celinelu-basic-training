@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime
 
 
@@ -26,7 +26,7 @@ class PostCrawl(BaseModel):
 
 
 # --- API ---
-class AuthorSchema(BaseModel):
+class UserSchema(BaseModel):
     name: str
 
     class Config:
@@ -40,20 +40,30 @@ class BoardSchema(BaseModel):
         orm_mode = True
 
 
+class CommentSchema(BaseModel):
+    user: Optional['UserSchema'] = None
+    content: Optional[str] = None
+    created_at: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+
 class PostSchema(BaseModel):
     id: Optional[int] = None
     title: Optional[str] = None
     content: Optional[str] = None
     created_at: Optional[datetime] = None
-    author: Optional['AuthorSchema'] = None
+    author: Optional['UserSchema'] = None
     board: Optional['BoardSchema'] = None
+    comments: Optional['List[CommentSchema]'] = None
 
     class Config:
         orm_mode = True
 
 
 class PostSearch(BaseModel):
-    author: Optional[AuthorSchema] = None
+    author: Optional[UserSchema] = None
     board: Optional[BoardSchema] = None
     start_datetime: Optional[datetime] = None
     end_datetime: Optional[datetime] = None
@@ -64,7 +74,7 @@ class PostSearch(BaseModel):
 
 class PostSchemaResponse(BaseModel):
     result: str = ''
-    data: Optional[PostSchema] = None
+    data: Optional[Union[PostSchema, List[PostSchema]]] = None
 
     class Config:
         orm_mode = True

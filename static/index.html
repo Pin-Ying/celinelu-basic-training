@@ -7,20 +7,19 @@
     <style>
         .grid {
             display: grid;
-            gap: 10px;
+            gap: 20px;
         }
 
         .grid-cols-4 {
             grid-template-columns: repeat(4, 1fr);
         }
 
-        .grid-cols-6 {
-            grid-template-columns: repeat(6, 1fr);
+        .grid-cols-5 {
+            grid-template-columns: repeat(5, 1fr);
         }
 
-        .grid-cols-6 > * {
+        .grid-cols-5 > * {
             width: 100%;
-            max-height: 200px;
             overflow-y: auto;
             border-bottom: solid #000000 1px;
         }
@@ -76,20 +75,21 @@
 
     <!-- 篩選區 -->
     <div>篩選文章(查詢 GET)</div>
-    <form id="post-filter" onchange="getPostData(); getStatistics();" class="grid grid-cols-4">
+    <form id="post-filter" onchange="flipPage('default'); getStatistics();" class="grid grid-cols-4">
         <input type="text" name="author_name" placeholder="發文者"/>
         <input type="text" name="board_name" placeholder="版面"/>
         <input type="date" name="start_datetime" placeholder="開始時間"/>
         <input type="date" name="end_datetime" placeholder="結束時間"/>
+        <input type="hidden" name="offset" value="0"/>
+        <input type="number" name="limit" value="50"/>
     </form>
 
     <div id="statistics-data"></div>
 
     <!-- 資料表頭 -->
-    <div class="grid grid-cols-6">
+    <div class="grid grid-cols-5">
         <div>文章標題</div>
         <div>發文者</div>
-        <div>內文</div>
         <div>版面</div>
         <div>發文時間</div>
         <div></div>
@@ -119,16 +119,23 @@
     }
 
     function flipPage(mode) {
-        let params = new URLSearchParams(window.location.search);
-        let limit = parseInt(params.get("limit")) || 50;
-        let offset = parseInt(params.get("offset")) || 0;
+        let offset_input = document.querySelector('input[name="offset"]');
+        let offset = parseInt(offset_input.value);
+        let limit = parseInt(document.querySelector('input[name="limit"]').value);
+
+        if (mode === "default") {
+            offset_input.value = 0;
+            getPostData();
+            return;
+        }
 
         if (mode === "next") {
             offset += limit;
         } else if (mode === "prev") {
             offset = Math.max(offset - limit, 0);
         }
-        getPostData(limit, offset);
+        offset_input.value = offset;
+        getPostData();
     }
 
     function closePost() {
@@ -138,7 +145,7 @@
     function createPostForm(post, container) {
         // console.log(post);
         let row = document.createElement('div');
-        row.className = "grid grid-cols-6";
+        row.className = "grid grid-cols-5";
         row.innerHTML = `
                     <div>
                         ${post.title}
@@ -147,16 +154,13 @@
                         ${post.author.name}
                     </div>
                     <div>
-                        ${post.content}
-                    </div>
-                    <div>
                         ${post.board.name}
                     </div>
                     <div>
                         ${post.created_at}
                     </div>
                     <div>
-                        <button type="button" onclick="getOnePostData(${post.id})">編輯</button>
+                        <button type="button" onclick="getOnePostData(${post.id})">詳細內容</button>
                     </div>
                     `;
         container.appendChild(row);
@@ -165,12 +169,13 @@
     function getOnePostData(post_id) {
         fetch('/api/posts/' + post_id, {method: 'GET'})
             .then(res => res.json())
-            .then(data => {
-                console.log(data);
-                let post = data[0];
-                let container = document.querySelector("#show-one-post");
-                container.style.display = 'block';
-                container.innerHTML = `
+            .then(result => {
+                if (result.result === "success") {
+                    let post = result.data;
+                    console.log(post);
+                    let container = document.querySelector("#show-one-post");
+                    container.style.display = 'block';
+                    container.innerHTML = `
                                     <form class="show-post-form" id="update-post-${post.id}" >
                                         <input type="text" name="title" value="${post.title}"/>
                                         <input type="text" name="author_name" value="${post.author.name}"/>
@@ -180,18 +185,30 @@
                                         <div>
                                             <button type="button" onclick="updatePost(${post.id})">修改(PUT)</button>
                                             <button type="button" onclick="deletePost(${post.id})">刪除(DELETE)</button>
+                                            <button type="button" onclick="closePost()">關閉</button>
                                         </div>
                                     </form>
-                                    <button onclick="closePost()">關閉</button>
                                     `;
+                    if (post.comments.length > 0) {
+                        console.log("comment!");
+                        post.comments.forEach(comment => {
+                            let row = document.createElement('div');
+                            row.innerHTML = `
+                                                <span>${comment.user.name}</span>
+                                                <span>：${comment.content}</span>
+                                                <span>(${comment.created_at})</span>
+                                            `;
+                            container.appendChild(row);
+                        });
+                    }
+                } else {
+                    alert(result.result)
+                }
             })
             .catch(err => console.error(err));
     }
 
-    function getPostData(limit=50, offset=0) {
-        // let params = new URLSearchParams(window.location.search);
-        // limit = params.get("limit") || 50;
-        // offset = params.get("offset") || 0;
+    function getPostData() {
         let form = document.querySelector("#post-filter");
         let formData = new FormData(form);
         let query = new URLSearchParams();
@@ -202,10 +219,11 @@
             }
         }
 
-        fetch(`/api/posts?${query.toString()}&offset=${offset}&limit=${limit}`, {method: 'GET'})
+        fetch(`/api/posts?${query.toString()}`, {method: 'GET'})
             .then(res => res.json())
-            .then(data => {
-                console.log(`/api/posts?offset=${offset}&limit=${limit}&${query.toString()}`)
+            .then(result => {
+                let data = result.data;
+                console.log(`/api/posts?${query.toString()}`)
                 let container = document.querySelector("#show-data");
                 container.innerHTML = '';
                 data.forEach(post => {

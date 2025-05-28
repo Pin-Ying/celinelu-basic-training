@@ -1,11 +1,12 @@
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy.exc import OperationalError, SQLAlchemyError, IntegrityError
 import time
 
+from sqlalchemy.exc import OperationalError, SQLAlchemyError, IntegrityError
+from sqlalchemy.orm import Session, joinedload
+
+from db.database import Base, engine, SessionLocal
 from model.ptt_content import User, Post, Comment, Board, Log
 from schema.ptt_content import PostCrawl, CommentCrawl, PostSearch, PostSchema, PostSchemaResponse, BoardSchema, \
-    AuthorSchema
-from db.database import Base, engine, SessionLocal
+    UserSchema, CommentSchema
 
 
 def create_default():
@@ -114,17 +115,17 @@ def post_schema_sqlalchemy_to_pydantic(post_input: Post) -> PostSchema:
         content=post_input.content,
         created_at=post_input.created_at,
         board=BoardSchema(name=post_input.board.name),
-        author=AuthorSchema(name=post_input.author.name)
+        author=UserSchema(name=post_input.author.name),
+        comments=[
+            CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.created_at)
+            for c in post_input.comments
+            if post_input.comments is not None
+        ]
     )
 
 
 def get_newest_post(db: Session, board: int):
     return db.query(Post).filter_by(board_id=board).order_by(Post.created_at.desc()).first()
-
-
-def get_post_filter_by(db: Session, posts_limit=50, posts_offset=0, **filters):
-    query_filter = db.query(Post).filter_by(**filters).order_by(Post.created_at.desc())
-    return query_filter.limit(posts_limit).offset(posts_offset).all()
 
 
 def get_query_by_search_dic(
@@ -149,6 +150,21 @@ def get_query_by_search_dic(
         query = query.filter(Post.created_at <= post_search.end_datetime)
 
     return query.order_by(Post.created_at.desc())
+
+
+def get_posts_by_search_dic(db: Session, search_filter, posts_limit=50, posts_offset=0):
+    all_posts = get_query_by_search_dic(db, search_filter).offset(posts_offset).limit(posts_limit).all()
+    post_schema_list = [post_schema_sqlalchemy_to_pydantic(p) for p in all_posts]
+    return PostSchemaResponse(result="success", data=post_schema_list)
+
+
+def get_post_detail_by_id(db: Session, post_id: int):
+    the_post = db.query(Post).filter_by(id=post_id)
+    the_post = the_post.options(joinedload(Post.comments)).first()
+    if the_post is None:
+        return PostSchemaResponse(result="PostNotFound")
+    post_schema = post_schema_sqlalchemy_to_pydantic(the_post)
+    return PostSchemaResponse(result="success", data=post_schema)
 
 
 def get_existing_post_keys(db: Session, posts: list[PostCrawl]):

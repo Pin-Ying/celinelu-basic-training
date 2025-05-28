@@ -3,15 +3,17 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy.orm import Query
 
 from db.crud import (
     get_or_create_user, prepare_users_from_posts, create_post, create_posts_bulk,
-    get_newest_post, get_post_filter_by, get_post_by_search_dic,
+    get_newest_post, get_posts_by_search_dic,
     update_post_from_id, delete_post_from_id, get_or_create_board,
-    log_crawl_result, get_all_boards
+    log_crawl_result, get_all_boards, get_post_detail_by_id, get_query_by_search_dic
 )
-from model.ptt_content import Post, User, Board
-from schema.ptt_content import PostCrawl, CommentCrawl, PostSchema, AuthorSchema, BoardSchema, PostSearch
+from model.ptt_content import Post, User, Board, Comment
+from schema.ptt_content import PostCrawl, CommentCrawl, PostSchema, UserSchema, BoardSchema, PostSearch, CommentSchema, \
+    PostSchemaResponse
 
 
 # -------- Fixtures --------
@@ -42,7 +44,51 @@ def dummy_postschema():
         content="Content here",
         created_at=datetime.now(),
         board=BoardSchema(name="test_board"),
-        author=AuthorSchema(name="test_author")
+        author=UserSchema(name="test_author"),
+        comments=[
+            CommentSchema(user=UserSchema(name="comment_user"), content="Nice post!",
+                          created_at=datetime.now().isoformat())
+        ]
+    )
+
+
+@pytest.fixture
+def dummy_model_user():
+    return User(
+        id=1,
+        name="test_user"
+    )
+
+
+@pytest.fixture
+def dummy_model_post():
+    the_board = Board(
+        id=1,
+        name="NBA"
+    )
+
+    the_user = User(
+        id=1,
+        name="test"
+    )
+
+    the_comment = Comment(
+        id=1,
+        content="test-comment-content",
+        created_at="2025-05-27T15:30:00",
+        post_id=1,
+        user_id=1,
+        user=the_user  # ✅ 關鍵補上
+    )
+
+    return Post(
+        id=1,
+        title="test-post",
+        content="test-content",
+        created_at=datetime(2025, 5, 27, 12, 0, 0),
+        author=the_user,
+        board=the_board,
+        comments=[the_comment]
     )
 
 
@@ -88,16 +134,18 @@ def test_get_newest_post(db):
     assert result.title == "Newest"
 
 
-def test_get_post_filter_by(db):
-    db.query().filter_by().order_by().limit().offset().all.return_value = [Post()]
-    results = get_post_filter_by(db, posts_limit=5, posts_offset=0, board_id=1)
-    assert isinstance(results, list)
+def test_get_post_detail_by_id(db, dummy_model_post):
+    mock_query = db.query.return_value
+    mock_filter_by = mock_query.filter_by.return_value
+    mock_join = mock_filter_by.join.return_value
+    mock_filter = mock_join.filter.return_value
+    mock_filter.first.return_value = dummy_model_post
 
+    result = get_post_detail_by_id(db, 1)
 
-def test_get_post_by_search_dic(db):
-    db.query().options().order_by().offset().limit().all.return_value = [Post()]
-    result = get_post_by_search_dic(db, PostSearch(), 5, 0)
-    assert isinstance(result, list)
+    assert result.result == "success"
+    assert result.data.id == 1
+    assert result.data.comments[0].content == "test-comment-content"
 
 
 def test_update_post_from_id_success(db, dummy_postschema):

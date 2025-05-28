@@ -75,16 +75,13 @@
 
     <!-- 篩選區 -->
     <div>篩選文章(查詢 GET)</div>
-    <form id="post-filter" onchange="flipPage(); getStatistics();" class="grid grid-cols-4">
+    <form id="post-filter" onchange="flipPage('default'); getStatistics();" class="grid grid-cols-4">
         <input type="text" name="author_name" placeholder="發文者"/>
         <input type="text" name="board_name" placeholder="版面"/>
         <input type="date" name="start_datetime" placeholder="開始時間"/>
         <input type="date" name="end_datetime" placeholder="結束時間"/>
-
-        <label for="page">頁數</label>
-        <input type="number" id="page" name="page" value="1" min="1"/>
-        <label for="limit">每頁顯示篇數</label>
-        <input type="number" id="limit" name="limit" value="50"/>
+        <input type="hidden" name="offset" value="0"/>
+        <input type="number" name="limit" value="50"/>
     </form>
 
     <div id="statistics-data"></div>
@@ -122,22 +119,22 @@
     }
 
     function flipPage(mode) {
-        let page_input = document.querySelector('input[name="page"]');
-        let page = parseInt(page_input.value);
+        let offset_input = document.querySelector('input[name="offset"]');
+        let offset = parseInt(offset_input.value);
+        let limit = parseInt(document.querySelector('input[name="limit"]').value);
 
         if (mode === "default") {
-            page_input.value = 1;
+            offset_input.value = 0;
             getPostData();
             return;
         }
 
         if (mode === "next") {
-            page += 1;
+            offset += limit;
         } else if (mode === "prev") {
-            page = Math.max(page - 1, 0);
+            offset = Math.max(offset - limit, 0);
         }
-
-        page_input.value = page;
+        offset_input.value = offset;
         getPostData();
     }
 
@@ -241,9 +238,6 @@
         let formData = new FormData(form);
         let query = new URLSearchParams();
 
-        let page_input = document.querySelector('input[name="page"]');
-        let limit = parseInt(document.querySelector('input[name="limit"]').value);
-
         for (const [key, value] of formData.entries()) {
             if (value.trim() !== "") {
                 query.append(key, value);
@@ -255,7 +249,6 @@
             .then(data => {
                 let container = document.querySelector("#statistics-data");
                 container.innerHTML = `<div>總計：${data["result_count"]}篇文章</div>`;
-                page_input.max = parseInt(parseInt(data["result_count"]) / limit) + 1;
             })
             .catch(err => console.error(err));
     }

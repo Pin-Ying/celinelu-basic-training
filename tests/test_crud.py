@@ -66,21 +66,18 @@ def dummy_model_post():
         id=1,
         name="NBA"
     )
-
     the_user = User(
         id=1,
         name="test"
     )
-
     the_comment = Comment(
         id=1,
         content="test-comment-content",
         created_at="2025-05-27T15:30:00",
         post_id=1,
         user_id=1,
-        user=the_user  # ✅ 關鍵補上
+        user=the_user
     )
-
     return Post(
         id=1,
         title="test-post",

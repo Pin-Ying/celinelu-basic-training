@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from api import ptt
 import os
 
 from api import ptt
@@ -16,5 +15,3 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 @app.get("/")
 def read_index():
     return FileResponse("static/index.html")
-
-

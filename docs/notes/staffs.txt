@@ -38,7 +38,13 @@ def safe_commit(session: Session, retries: int = 3, delay: float = 0.5):
 ALTER DATABASE ptt_db CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 ALTER TABLE posts CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-測試POST
+測試API
+
+curl -X GET http://localhost:8000/api/posts?author_name=test_author
+curl -X GET http://localhost:8000/api/posts/69258
+curl -X GET http://localhost:8000/api/statistics?board_name=NBA
+
+
 curl -X POST http://localhost:8000/api/posts ^
 -H "Content-Type: application/json" ^
 -d "{\"title\": \"test_title\", \"content\": \"test\", \"author\": {\"name\": \"test_author\"}, \"board\": {\"name\": \"home-sale\"}}"
@@ -48,12 +54,15 @@ curl -X POST http://localhost:8000/api/posts/form ^
 -H "Content-Type: application/x-www-form-urlencoded" ^
 -d "title=test_title&author_name=test_author&content=test&board_name=home-sale"
 
-curl -X PUT http://localhost:8000/api/posts/48636 ^
+
+curl -X PUT http://localhost:8000/api/posts/69165 ^
 -H "Content-Type: application/json" ^
 -d "{\"title\": \"test_title\", \"content\": \"test2.0\", \"author\": {\"name\": \"test_author\"}, \"board\": {\"name\": \"home-sale\"}}"
+
 
 curl -X PUT http://localhost:8000/api/posts/form/69154 ^
 -H "Content-Type: application/x-www-form-urlencoded" ^
 -d "title=test_title&author_name=test_author&content=test2.0&board_name=home-sale"
 
-curl -X DELETE http://localhost:8000/api/posts/48636
+
+curl -X DELETE http://localhost:8000/api/posts/69165

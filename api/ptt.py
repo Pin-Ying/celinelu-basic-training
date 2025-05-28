@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 import pytz
 from fastapi import APIRouter, FastAPI, Depends, Query, Form, Body
@@ -68,7 +68,8 @@ def handle_create_post(db, post_data: PostSchema):
 async def get_posts(search_filter: PostSearch = Depends(post_search_query),
                     db=Depends(get_db),
                     limit=50,
-                    offset=0):
+                    page=1):
+    offset = (int(page) - 1) * int(limit)
     return get_posts_by_search_dic(db, search_filter, limit, offset)
 
 
@@ -82,10 +83,11 @@ async def get_statistics(search_filter: PostSearch = Depends(post_search_query),
                          db=Depends(get_db)):
     query = get_query_by_search_dic(db, search_filter)
 
-    # 統計符合條件的總數
+    # 統計符合條件的文章總數
     total_count = query.count()
 
     return {
+        "result": "success",
         "search_filter": search_filter,
         "result_count": total_count
     }

@@ -4,6 +4,7 @@ from typing import Optional, Annotated
 
 import httpx
 import pytz
+from dotenv import load_dotenv
 from fastapi import FastAPI, Form, Depends, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
@@ -25,6 +26,11 @@ def read_index():
     return FileResponse("static/index.html")
 
 
+# 模擬 呼叫第三方API
+load_dotenv()
+PTT_API_URL = os.getenv("PTT_API_URL")
+
+# --- GET ---
 @app.get("/posts")
 async def get_post(
         author_name: Optional[str] = Query(""),
@@ -45,7 +51,7 @@ async def get_post(
 
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            "http://localhost:8000/api/posts?" + query_string
+            PTT_API_URL + "/api/posts?" + query_string
         )
     return response.json()
 
@@ -54,7 +60,7 @@ async def get_post(
 async def get_post(post_id: int):
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            f"http://localhost:8000/api/posts/{post_id}"
+            PTT_API_URL + f"/api/posts/{post_id}"
         )
     return response.json()
 
@@ -75,7 +81,7 @@ async def get_statistics(
 
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            "http://localhost:8000/api/statistics?" + query_string
+            PTT_API_URL + "/api/statistics?" + query_string
         )
     return response.json()
 
@@ -96,7 +102,7 @@ async def forward_post(
     )
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "http://localhost:8000/api/posts",
+            PTT_API_URL + "/api/posts",
             json=jsonable_encoder(post_schema),
         )
     return response.json()
@@ -121,7 +127,7 @@ async def update_post(
     )
     async with httpx.AsyncClient() as client:
         response = await client.put(
-            f"http://localhost:8000/api/posts/{post_id}",
+            PTT_API_URL + f"/api/posts/{post_id}",
             json=jsonable_encoder(post_schema),
         )
     return response.json()
@@ -132,6 +138,6 @@ async def update_post(
 async def delete_post(post_id: int):
     async with httpx.AsyncClient() as client:
         response = await client.delete(
-            f"http://localhost:8000/api/posts/{post_id}"
+            PTT_API_URL + f"/api/posts/{post_id}"
         )
     return response.json()

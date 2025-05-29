@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 import pytz
-from fastapi import APIRouter, FastAPI, Depends, Query, Form, Body
+from fastapi import APIRouter, FastAPI, Depends, Form, Body
 from sqlalchemy.exc import SQLAlchemyError
 
 from db.crud import create_post, update_post_from_id, delete_post_from_id, \
@@ -122,3 +122,6 @@ async def update_post_from_form(post_id, db=Depends(get_db), post_update: PostSc
 @router.delete("/api/posts/{post_id}", response_model=PostSchemaResponse)
 async def delete_post(post_id, db=Depends(get_db)):
     return delete_post_from_id(db, post_id)
+
+
+app.include_router(router)

@@ -16,10 +16,8 @@ ENV POETRY_VIRTUALENVS_CREATE=false \
 # 設定工作目錄
 WORKDIR /app
 
-# 複製 Poetry 設定檔
+# Poetry 建立環境
 COPY pyproject.toml poetry.lock* ./
-
-# 安裝依賴
 RUN poetry install --no-root
 
 # 複製其他程式碼

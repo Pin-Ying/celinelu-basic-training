@@ -49,6 +49,21 @@ def safe_commit(session: Session, retries: int = 3, delay: float = 0.5):
 
 
 # --- User ---
+def get_or_create_user(db: Session, username: str) -> type[User] | None | User:
+    user = db.query(User).filter_by(name=username).first()
+    if user:
+        return user
+    try:
+        user = User(name=username)
+        db.add(user)
+        db.flush()
+        return user
+    except IntegrityError:
+        db.rollback()
+        return db.query(User).filter_by(name=username).first()
+
+
+
 def prepare_users_from_posts(db: Session, posts: list[PostCrawl]):
     all_usernames = set()
     for p in posts:
@@ -71,20 +86,6 @@ def prepare_users_from_posts(db: Session, posts: list[PostCrawl]):
         user_map[user.name] = user
 
     return user_map
-
-
-def get_or_create_user(db: Session, username: str) -> type[User] | None | User:
-    user = db.query(User).filter_by(name=username).first()
-    if user:
-        return user
-    try:
-        user = User(name=username)
-        db.add(user)
-        db.flush()
-        return user
-    except IntegrityError:
-        db.rollback()
-        return db.query(User).filter_by(name=username).first()
 
 
 # --- Post ---
@@ -139,28 +140,28 @@ def get_newest_post(db: Session, board: int):
     return db.query(Post).filter_by(board_id=board).order_by(Post.created_at.desc()).first()
 
 
-def get_query_by_search_dic(
-        db: Session,
-        post_search: PostSearch
-):
+def get_query_by_search_dic(db: Session, post_search: PostSearch):
     query = db.query(Post).options(
         joinedload(Post.author),
         joinedload(Post.board)
     )
 
+    filters = []
     if post_search.author:
-        query = query.join(Post.author).filter(User.name == post_search.author.name)
+        query = query.join(Post.author)
+        filters.append(User.name == post_search.author.name)
 
     if post_search.board:
-        query = query.join(Post.board).filter(Board.name == post_search.board.name)
+        query = query.join(Post.board)
+        filters.append(Board.name == post_search.board.name)
 
     if post_search.start_datetime:
-        query = query.filter(Post.created_at >= post_search.start_datetime)
+        filters.append(Post.created_at >= post_search.start_datetime)
 
     if post_search.end_datetime:
-        query = query.filter(Post.created_at <= post_search.end_datetime)
+        filters.append(Post.created_at <= post_search.end_datetime)
 
-    return query.order_by(Post.created_at.desc())
+    return query.filter(*filters).order_by(Post.created_at.desc())
 
 
 def get_posts_by_search_dic(db: Session, search_filter, posts_limit=50, posts_offset=0):

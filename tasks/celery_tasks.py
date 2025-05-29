@@ -1,12 +1,13 @@
 # tasks/celery_tasks.py
-from celery import Celery, chord, chain, group
-from celery.schedules import crontab
-from dotenv import load_dotenv
 import logging
 import os
 
-from db.database import SessionLocal
+from celery import Celery, chain, group
+from celery.schedules import crontab
+from dotenv import load_dotenv
+
 from db.crud import log_crawl_result, get_newest_post, get_all_boards, create_posts_bulk
+from db.database import SessionLocal
 from schema.ptt_content import PostCrawl
 from tasks.ptt_crawl import PttCrawler
 
@@ -100,7 +101,7 @@ def save_posts_to_db(self, board, post_dicts: dict):
 
 
 @celery_app.task
-def all_sub_tasks_finished(result, msg="Task Finish!"):
+def all_sub_tasks_finished(msg="Task Finish!"):
     db = SessionLocal()
     try:
         log_crawl_result(db, msg)

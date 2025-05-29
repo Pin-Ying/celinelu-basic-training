@@ -2,6 +2,7 @@
 docker --version
 
 Reference: https://azole.medium.com/docker-container-%E5%9F%BA%E7%A4%8E%E5%85%A5%E9%96%80%E7%AF%87-1-3cb8876f2b14
+
 --- container ---
 docker container ls [OPTIONS]
 Aliases: docker ps
@@ -31,18 +32,21 @@ Aliases: docker images
 --- log ---
 docker logs <container>
 
+--- Docker Compose ---
+專案容器管理 => 當一個專案由多個容器進行開發，可藉由 docker-compose 進行各容器的管理
 
-docker exec -it <mariadb_container_name> bash
-
-# 建立並啟動所有容器
-docker compose up -d --build
-
-docker compose up
-docker compose up -d --remove-orphans
+建立專案
 docker compose build
 
-# 修改程式碼或 Dockerfile 後，重新建立
-docker compose up -d --build
+啟動專案
+docker compose up
+docker compose up -d --build => 建立並啟用(也可在修改程式碼或 Dockerfile 後，需重新建立時執行)
+docker compose up -d --remove-orphans
 
-# 清除 container + volume
+移除專案(container + volume)
 docker compose down -v
+
+docker exec -it <container_name> bash => 進入指定的容器
+
+Dockerfile => APP 運行的環境
+docker-compose.yml => 組成該APP的各項服務

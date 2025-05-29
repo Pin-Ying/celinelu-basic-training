@@ -7,28 +7,28 @@
     <link rel="stylesheet" href="static/css/css.css"/>
 
 </head>
-<body class="p-8 bg-gray-100">
-<div>
-    <h1>PTT 文章共賞</h1>
+<body>
+<h1>PTT 文章共賞</h1>
 
-    <div id="msg"></div>
+<div id="msg"></div>
 
-    <!-- 新增欄位 -->
-    <div>新增文章</div>
-    <form id="add-post-form">
-        <input type="text" name="title" placeholder="文章標題"/>
-        <input type="text" name="author_name" placeholder="發文者"/>
-        <input type="text" name="content" placeholder="內文"/>
-        <!--<input type="date" />-->
-        <input type="text" name="board_name" placeholder="版面"/>
-        <button type="button" onclick="addPost()">新增</button>
-    </form>
+<!-- 新增欄位 -->
+<div>新增文章</div>
+<form id="add-post-form">
+    <input type="text" name="title" placeholder="文章標題"/>
+    <input type="text" name="author_name" placeholder="發文者"/>
+    <input type="text" name="content" placeholder="內文"/>
+    <!--<input type="date" />-->
+    <input type="text" name="board_name" placeholder="版面"/>
+    <button type="button" onclick="addPost()">新增</button>
+</form>
 
-    <hr/>
+<hr/>
 
-    <!-- 篩選區 -->
-    <div>條件篩文章</div>
-    <form id="post-filter" onchange="flipPage(); getStatistics();" class="grid grid-cols-4">
+<!-- 篩選區 -->
+<div>條件篩文章</div>
+<form id="post-filter" onchange="flipPage(); getStatistics();">
+    <div class="grid grid-cols-4">
         <input type="text" name="author_name" placeholder="發文者"/>
         <input type="text" name="board_name" placeholder="版面"/>
         <input type="date" name="start_datetime" placeholder="開始時間"/>
@@ -38,34 +38,34 @@
         <input type="number" id="page" name="page" value="1" min="1"/>
         <label for="limit">每頁顯示篇數：</label>
         <input type="number" id="limit" name="limit" value="50"/>
-    </form>
-
-    <div id="statistics-data"></div>
-
-    <!-- 資料表頭 -->
-    <div class="grid grid-cols-5 grid-title">
-        <div>文章標題</div>
-        <div>發文者</div>
-        <div>版面</div>
-        <div>發文時間</div>
-        <div></div>
     </div>
+</form>
 
-    <!-- 資料列 -->
-    <div id="show-data">
+<div id="statistics-data"></div>
 
-    </div>
+<!-- 資料表頭 -->
+<div class="grid grid-cols-5 grid-title">
+    <div>文章標題</div>
+    <div>發文者</div>
+    <div>版面</div>
+    <div>發文時間</div>
+    <div></div>
+</div>
 
-    <div id="show-one-post">
-
-    </div>
-
-    <div class="grid" style="width: 100%; grid-template-columns: 1fr 1fr; margin-top: 10px;">
-        <button type="button" onclick="flipPage('prev')">上一頁</button>
-        <button type="button" onclick="flipPage('next')">下一頁</button>
-    </div>
+<!-- 資料列 -->
+<div id="show-data">
 
 </div>
+
+<div id="show-one-post">
+
+</div>
+
+<div class="grid" style="width: 100%; grid-template-columns: 1fr 1fr; margin-top: 10px;">
+    <button type="button" onclick="flipPage('prev')">上一頁</button>
+    <button type="button" onclick="flipPage('next')">下一頁</button>
+</div>
+
 </body>
 
 <script>

@@ -122,6 +122,3 @@ async def update_post_from_form(post_id, db=Depends(get_db), post_update: PostSc
 @router.delete("/api/posts/{post_id}", response_model=PostSchemaResponse)
 async def delete_post(post_id, db=Depends(get_db)):
     return delete_post_from_id(db, post_id)
-
-
-app.include_router(router)

@@ -12,11 +12,12 @@ body {
 }
 
 .grid-cols-4 {
+    width: 100%;
     grid-template-columns: repeat(4, 1fr);
 }
 
 .grid-cols-5 {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr) 0.5fr;
     border-bottom: 1px solid #ccc;
 }
 

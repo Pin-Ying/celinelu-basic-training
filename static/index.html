@@ -4,93 +4,46 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>文章管理 - Grid版</title>
-    <style>
-        .grid {
-            display: grid;
-            gap: 20px;
-        }
+    <link rel="stylesheet" href="static/css/css.css"/>
 
-        .grid-cols-4 {
-            grid-template-columns: repeat(4, 1fr);
-        }
-
-        .grid-cols-5 {
-            grid-template-columns: repeat(5, 1fr);
-        }
-
-        .grid-cols-5 > * {
-            width: 100%;
-            overflow-y: auto;
-            border-bottom: solid #000000 1px;
-        }
-
-        .show-post-form {
-            display: grid;
-        }
-
-        textarea {
-            min-height: 200px;
-            resize: vertical;
-        }
-
-        #show-one-post {
-            display: none;
-            position: fixed;
-            top: 30%;
-            left: 50%;
-            width: 70%;
-            min-height: 40%;
-            max-height: 50%;
-            transform: translateX(-50%);
-            background: white;
-            border: 1px solid #ccc;
-            padding: 20px;
-            z-index: 9999;
-            overflow-y: auto;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-        }
-    </style>
 </head>
 <body class="p-8 bg-gray-100">
 <div>
-    <h1>PTT文章</h1>
+    <h1>PTT 文章共賞</h1>
 
     <div id="msg"></div>
 
     <!-- 新增欄位 -->
-    <div>新增文章(新增 POST)</div>
+    <div>新增文章</div>
     <form id="add-post-form">
-        <div>
-            <input type="text" name="title" placeholder="文章標題"/>
-            <input type="text" name="author_name" placeholder="發文者"/>
-            <input type="text" name="content" placeholder="內文"/>
-            <!--<input type="date" />-->
-            <input type="text" name="board_name" placeholder="版面"/>
-            <button type="button" onclick="addPost()">新增</button>
-        </div>
+        <input type="text" name="title" placeholder="文章標題"/>
+        <input type="text" name="author_name" placeholder="發文者"/>
+        <input type="text" name="content" placeholder="內文"/>
+        <!--<input type="date" />-->
+        <input type="text" name="board_name" placeholder="版面"/>
+        <button type="button" onclick="addPost()">新增</button>
     </form>
 
     <hr/>
 
     <!-- 篩選區 -->
-    <div>篩選文章(查詢 GET)</div>
+    <div>條件篩文章</div>
     <form id="post-filter" onchange="flipPage(); getStatistics();" class="grid grid-cols-4">
         <input type="text" name="author_name" placeholder="發文者"/>
         <input type="text" name="board_name" placeholder="版面"/>
         <input type="date" name="start_datetime" placeholder="開始時間"/>
         <input type="date" name="end_datetime" placeholder="結束時間"/>
 
-        <label for="page">頁數</label>
+        <label for="page">頁數：</label>
         <input type="number" id="page" name="page" value="1" min="1"/>
-        <label for="limit">每頁顯示篇數</label>
+        <label for="limit">每頁顯示篇數：</label>
         <input type="number" id="limit" name="limit" value="50"/>
     </form>
 
     <div id="statistics-data"></div>
 
     <!-- 資料表頭 -->
-    <div class="grid grid-cols-5">
+    <div class="grid grid-cols-5 grid-title">
         <div>文章標題</div>
         <div>發文者</div>
         <div>版面</div>
@@ -107,7 +60,7 @@
 
     </div>
 
-    <div>
+    <div class="grid" style="width: 100%; grid-template-columns: 1fr 1fr; margin-top: 10px;">
         <button type="button" onclick="flipPage('prev')">上一頁</button>
         <button type="button" onclick="flipPage('next')">下一頁</button>
     </div>
@@ -163,7 +116,7 @@
                         ${post.created_at}
                     </div>
                     <div>
-                        <button type="button" onclick="getOnePostData(${post.id})">詳細內容</button>
+                        <button type="button" onclick="getOnePostData(${post.id})">詳細內文</button>
                     </div>
                     `;
         container.appendChild(row);
@@ -185,15 +138,17 @@
                                         <textarea name="content" >${post.content}</textarea>
                                         <input type="text" name="board_name" value="${post.board.name}"/>
                                         <input type="datetime-local" name="created_at" value="${post.created_at}"/>
-                                        <div>
-                                            <button type="button" onclick="updatePost(${post.id})">修改(PUT)</button>
-                                            <button type="button" onclick="deletePost(${post.id})">刪除(DELETE)</button>
+                                        <div class="grid" style="width: 100%; grid-template-columns: repeat(3, 1fr);">
+                                            <button type="button" onclick="updatePost(${post.id})">修改</button>
+                                            <button type="button" onclick="deletePost(${post.id})">刪除</button>
                                             <button type="button" onclick="closePost()">關閉</button>
                                         </div>
                                     </form>
                                     `;
                     if (post.comments.length > 0) {
-                        console.log("comment!");
+                        let title = document.createElement('div');
+                        title.style = "max-height: 100px; overflow-y: auto;"
+                        title.innerHTML = '<div>留言區：</div>';
                         post.comments.forEach(comment => {
                             let row = document.createElement('div');
                             row.innerHTML = `
@@ -201,8 +156,9 @@
                                                 <span>：${comment.content}</span>
                                                 <span>(${comment.created_at})</span>
                                             `;
-                            container.appendChild(row);
+                            title.appendChild(row);
                         });
+                        container.appendChild(title);
                     }
                 } else {
                     alert(result.result)
@@ -283,7 +239,7 @@
         let form = document.querySelector("#update-post-" + post_id);
         let formData = new FormData(form);
 
-        fetch(`/posts/form/${post_id}`, {
+        fetch(`/posts/${post_id}`, {
             method: 'PUT',
             body: formData
         })

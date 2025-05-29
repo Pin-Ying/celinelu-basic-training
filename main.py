@@ -1,17 +1,17 @@
 import os
 from datetime import datetime
-from typing import Optional, Annotated
+from typing import Optional
 
 import httpx
 import pytz
 from dotenv import load_dotenv
-from fastapi import FastAPI, Form, Depends, Query
+from fastapi import FastAPI, Form, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from api import ptt
-from schema.ptt_content import PostSchema, UserSchema, BoardSchema, PostFormData, PostSearch
+from schema.ptt_content import PostSchema, UserSchema, BoardSchema
 
 app = FastAPI()
 app.include_router(ptt.router)
@@ -29,6 +29,7 @@ def read_index():
 # 模擬 呼叫第三方API
 load_dotenv()
 PTT_API_URL = os.getenv("PTT_API_URL")
+
 
 # --- GET ---
 @app.get("/posts")

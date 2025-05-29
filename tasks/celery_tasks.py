@@ -1,4 +1,3 @@
-# tasks/celery_tasks.py
 import logging
 import os
 

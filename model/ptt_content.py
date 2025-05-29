@@ -1,20 +1,14 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint, func
+from datetime import datetime
+
+import pytz
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.orm import relationship
+
 from db.database import Base
-from datetime import datetime
-import pytz
 
 tz = pytz.timezone("Asia/Taipei")
 datetime_now = lambda: datetime.now(tz)
-
-
-class LongTextCompat(Text):
-    def compile(self, dialect=None):
-        # MySQL 就使用原生 LONGTEXT，其餘都用 Text
-        if dialect and dialect.name == "mysql":
-            return LONGTEXT().compile(dialect)
-        return super().compile(dialect)
 
 
 class User(Base):
@@ -36,7 +30,7 @@ class Post(Base):
     __tablename__ = 'posts'
     id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=False)
-    content = Column(LongTextCompat)
+    content = Column(LONGTEXT)
     created_at = Column(DateTime, default=datetime_now)
     author_id = Column(Integer, ForeignKey('users.id'))
     board_id = Column(Integer, ForeignKey('boards.id'))

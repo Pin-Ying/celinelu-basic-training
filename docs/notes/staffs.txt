@@ -55,14 +55,14 @@ curl -X POST http://localhost:8000/api/posts/form ^
 -d "title=test_title&author_name=test_author&content=test&board_name=home-sale"
 
 
-curl -X PUT http://localhost:8000/api/posts/69258 ^
+curl -X PUT http://localhost:8000/api/posts/69316 ^
 -H "Content-Type: application/json" ^
 -d "{\"title\": \"test_title\", \"content\": \"test2.0\", \"author\": {\"name\": \"test_author\"}, \"board\": {\"name\": \"home-sale\"}}"
 
 
-curl -X PUT http://localhost:8000/api/posts/form/69258 ^
+curl -X PUT http://localhost:8000/api/posts/form/69316 ^
 -H "Content-Type: application/x-www-form-urlencoded" ^
--d "title=test_title&author_name=test_author&content=test2.0&board_name=home-sale"
+-d "title=test_title&author_name=test_author&content=test3.0&board_name=home-sale"
 
 
-curl -X DELETE http://localhost:8000/api/posts/69165
+curl -X DELETE http://localhost:8000/api/posts/69316

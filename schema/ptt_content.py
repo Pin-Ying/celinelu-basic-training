@@ -1,3 +1,4 @@
+from fastapi import Form
 from pydantic import BaseModel
 from typing import List, Optional, Union
 from datetime import datetime
@@ -81,3 +82,26 @@ class PostSchemaResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class StatisticsResponse(PostSchemaResponse):
+    search_filter: Optional[PostSearch]
+    result_count: int
+
+
+#  --- Form Data ---
+class PostFormData(BaseModel):
+    title: str
+    content: str
+    author_name: str
+    board_name: str
+
+    @classmethod
+    def as_form(
+            cls,
+            title: str = Form(...),
+            content: str = Form(...),
+            author_name: str = Form(...),
+            board_name: str = Form(...)
+    ):
+        return cls(title=title, content=content, author_name=author_name, board_name=board_name)

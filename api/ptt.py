@@ -5,7 +5,7 @@ import pytz
 from fastapi import APIRouter, FastAPI, Depends, Form, Body
 from sqlalchemy.exc import SQLAlchemyError
 
-from db.crud import create_post, update_post_from_id, delete_post_from_id, \
+from db.crud import create_post_from_postschema, update_post_from_id, delete_post_from_id, \
     get_query_by_search_dic, get_post_detail_by_id, get_posts_by_search_dic
 from db.database import SessionLocal
 from schema.ptt_content import PostSchema, PostSearch, UserSchema, BoardSchema, PostSchemaResponse, StatisticsResponse
@@ -66,7 +66,7 @@ def form_to_postschema(
 
 
 def handle_create_post(db, post_data: PostSchema):
-    return create_post(db, post_data)
+    return create_post_from_postschema(db, post_data)
 
 
 # --- GET ---

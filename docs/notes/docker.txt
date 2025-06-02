@@ -40,7 +40,7 @@ docker compose build
 
 啟動專案
 docker compose up
-docker compose up -d --build => 建立並啟用(也可在修改程式碼或 Dockerfile 後，需重新建立時執行)
+docker compose up -d --build => 建立並啟用(也可在修改程式碼或 Dockerfile 後，需重新建立時執行)，-d："detached mode"，在背景執行
 docker compose up -d --remove-orphans
 
 移除專案(container + volume)

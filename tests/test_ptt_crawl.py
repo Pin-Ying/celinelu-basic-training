@@ -95,7 +95,7 @@ def test_parse_article_from_inline_html():
 
 
 def test_crawl_with_inline_html():
-    crawler = PttCrawler(None, 'Lifeismoney', 5, datetime.now() - timedelta(days=10))
+    crawler = PttCrawler(None, 'Lifeismoney', 5, datetime(2024,5,2))
 
     def mock_get_soup(url):
         if url.endswith("index.html"):

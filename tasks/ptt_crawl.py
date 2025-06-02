@@ -1,6 +1,8 @@
+from typing import List
+
+import bs4
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import logging
 from schema.ptt_content import PostCrawl
@@ -32,9 +34,9 @@ class PttCrawler:
             print(f"[Error] fetch {url}: {e}")
         return None
 
-    def parse_article(self, a_tag):
+    def parse_article(self, post_a_tag: bs4.element.Tag) -> PostCrawl:
         post_data = {"board_id": self.board_id}
-        url = self.BASE_URL + a_tag.get("href")
+        url = self.BASE_URL + post_a_tag.get("href")
         soup = self.get_soup(url)
         if not soup:
             return None
@@ -77,41 +79,40 @@ class PttCrawler:
             print(f"[ParseError] {url} -> {e}")
             return None
 
-    def crawl(self):
-        page = "index.html"
+    def crawl(self) -> List[PostCrawl]:
+        crawling_page = "index.html"
         all_posts = []
 
-        while True:
+        while crawling_page != '':
             page_posts = []
-            logger.info(f"{self.board}, Crawling page: {page}...")
-            soup = self.get_soup(f"{self.BASE_URL}/bbs/{self.board}/{page}")
+            logger.info(f"{self.board}, Crawling，crawling_page: {crawling_page}...")
+            soup = self.get_soup(f"{self.BASE_URL}/bbs/{self.board}/{crawling_page}")
             if not soup:
                 break
 
-            a_tags = []
+            crawling_page = ''  # 迴圈終止預設條件
+
+            post_a_tags = []
             for tag in soup.select("div.r-list-container > div"):
                 if "r-list-sep" in tag.get("class", []):
                     break
                 if "r-ent" in tag.get("class", []):
                     a_tag = tag.select_one(".title > a")
                     if a_tag:
-                        a_tags.append(a_tag)
+                        post_a_tags.append(a_tag)
 
-            if not a_tags:
+            if not post_a_tags:
                 break
 
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                futures = [executor.submit(self.parse_article, a) for a in a_tags]
-                for future in as_completed(futures):
-                    try:
-                        post = future.result()
-                        if post:
-                            all_posts.append(post)
-                            page_posts.append(post)
-                    except Exception as e:
-                        logger.error(f"Thread parse error: {e}")
+            try:
+                post = [self.parse_article(a_tag) for a_tag in post_a_tags]
+                if post:
+                    all_posts.extend(post)
+                    page_posts.extend(post)
+            except Exception as e:
+                logger.error(f"Error!: {e}")
 
-            logger.info(f"Finish page: {page}")
+            logger.info(f"Finish crawling_page: {crawling_page}")
 
             if len(page_posts) > 0:
                 page_posts.sort(key=lambda p: p.created_at)
@@ -123,6 +124,6 @@ class PttCrawler:
             prev_link = soup.select_one("div.btn-group-paging a:contains('上頁')")
             if not prev_link:
                 break
-            page = prev_link["href"].split("/")[-1]
+            crawling_page = prev_link["href"].split("/")[-1]
 
         return all_posts

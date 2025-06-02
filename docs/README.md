@@ -52,6 +52,7 @@
     - 抓取每篇文章的方法皆相同
 - 排程
   - Celery
+  > ![celery-log.png](img/celery-log.png)
 - API
 - 測試
 - 前端
@@ -59,3 +60,4 @@
   > ![ptt-web-frontend-2.png](img/ptt-web-frontend-2.png)
 - 部屬
   - WebServer：Uvicorn
+- 

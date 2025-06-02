@@ -1,6 +1,6 @@
 FROM python:3.13-slim
 
-# 安裝系統工具與 curl（給 poetry 用）
+# 安裝系統工具與 curl（安裝 poetry 用）
 RUN apt-get update && apt-get install -y curl build-essential
 
 # 安裝 Poetry 並加入 PATH

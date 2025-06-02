@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from db.crud import (
-    get_or_create_user, prepare_users_from_posts, create_post, create_posts_bulk,
+    get_or_create_user, prepare_users_from_posts, create_post_from_postschema, create_posts,
     update_post_from_id, delete_post_from_id, get_or_create_board,
     get_all_boards, get_existing_post_keys
 )
@@ -90,14 +90,14 @@ def dummy_model_post(dummy_model_user, dummy_model_board, dummy_model_comment):
 
 # -------- Tests for User --------
 def test_get_or_create_user_new(db):
-    db.query().filter_by().first.return_value = None
+    db.query().get.return_value = None
     user = get_or_create_user(db, "test_new")
     assert db.add.call_count == 1
     assert user.name == "test_new"
 
 
 def test_get_or_create_user_existing(db, dummy_model_user):
-    db.query().filter_by().first.return_value = dummy_model_user
+    db.query().get.return_value = dummy_model_user
     user = get_or_create_user(db, dummy_model_user.name)
     assert db.add.call_count == 0
     assert user.name == dummy_model_user.name
@@ -152,7 +152,7 @@ def test_create_post_success(db, dummy_postschema, dummy_model_user, dummy_model
         mock_get_or_create_user.return_value = dummy_model_user
         mock_get_or_create_board.return_value = dummy_model_board
 
-        result = create_post(db, dummy_postschema)
+        result = create_post_from_postschema(db, dummy_postschema)
 
         assert result.result == "success"
         assert result.data.title == dummy_postschema.title
@@ -162,7 +162,7 @@ def test_create_post_success(db, dummy_postschema, dummy_model_user, dummy_model
 def test_create_posts_bulk_success(db, dummy_postcrawl):
     with mock.patch("db.crud.get_existing_post_keys") as mock_get_existing_post_keys:
         mock_get_existing_post_keys.return_value = set()
-        result = create_posts_bulk(db, [dummy_postcrawl])
+        result = create_posts(db, [dummy_postcrawl])
     assert len(result) == 1
     assert isinstance(result[0], Post)
     assert result[0].title == dummy_postcrawl.title
@@ -186,14 +186,14 @@ def test_delete_post_from_id_success(db, dummy_model_post):
 
 # -------- Tests for Board --------
 def test_get_or_create_board_new(db):
-    db.query().filter_by().first.return_value = None
+    db.query().get.return_value = None
     board = get_or_create_board(db, "test_new")
     assert db.add.call_count == 1
     assert board.name == "test_new"
 
 
 def test_get_or_create_board_existing(db, dummy_model_board):
-    db.query().filter_by().first.return_value = dummy_model_board
+    db.query().get.return_value = dummy_model_board
     board = get_or_create_board(db, dummy_model_board.name)
     assert db.add.call_count == 0
     assert board.name == dummy_model_board.name

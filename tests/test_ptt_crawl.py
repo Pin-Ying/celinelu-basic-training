@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 
 from tasks.ptt_crawl import PttCrawler
 
-
 # 模擬文章 HTML
 ARTICLE_HTML = """
 <!DOCTYPE html>

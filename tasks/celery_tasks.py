@@ -37,7 +37,7 @@ def crawl_single_board_task(board: str, board_id: int):
         crawler = PttCrawler(db, board, board_id, newest_post.created_at if newest_post else None)
         log_crawl_result(db, f"[Crawl({board})]: Started!")
         posts = crawler.crawl()
-        log_crawl_result(db, f"[Crawl({board})]: Finish! Crawled {len(posts)} posts")
+        log_crawl_result(db, f"[Crawl({board})]: Finish! Crawled {len(posts)} posts.")
         post_dicts = [post.dict() for post in posts]
         return {"board": board, "posts": post_dicts}
     except Exception as e:
@@ -56,7 +56,8 @@ def split_and_save_posts(crawl_result: dict):
         save_posts_to_db.s(board, post_dicts[i:i + 50])
         for i in range(0, len(post_dicts), 50)
     ])
-    return task_group
+    task_group.apply_async()
+    return f"[DB Saving({board})]: Started."
 
 
 @celery_app.task(name="save_posts_to_db", bind=True, max_retries=3, default_retry_delay=10)
@@ -69,7 +70,7 @@ def save_posts_to_db(self, board, post_dicts: dict):
         if self.request.retries < self.max_retries:
             log_crawl_result(db, f"[DB Saving({board})]: Retrying! {e}", "WARNING")
             raise self.retry(exc=e)
-        log_crawl_result(db, f"[DB Saving({board})]: Retry Failed {e}", "ERROR")
+        log_crawl_result(db, f"[DB Saving({board})]: Retry Failed. {e}", "ERROR")
         logger.error(f"[DB Saving({board})]: Retry Failed {e}")
     finally:
         db.close()
@@ -106,7 +107,8 @@ def crawl_all_boards():
         # 用 group 包起所有 board 的完整任務
         chain(
             group(full_tasks),
-            all_sub_tasks_finished.s("All Boards Finished!")
+            all_sub_tasks_finished.s("All Boards Finished! Task Finish.")
         ).apply_async()
     except Exception as e:
-        logger.error(f"[Crawl Error]: {e}", "ERROR")
+        log_crawl_result(db, f"Error： {e}", "ERROR")
+        logger.error(f"Error： {e}", "ERROR")

@@ -5,7 +5,7 @@ from typing import Optional
 import httpx
 import pytz
 from dotenv import load_dotenv
-from fastapi import FastAPI, Form, Query
+from fastapi import FastAPI, Form, Query, Body
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -88,23 +88,33 @@ async def get_statistics(
 
 
 # --- POST ---
+# @app.post("/posts")
+# async def forward_post(
+#         title: str = Form(...),
+#         content: str = Form(...),
+#         author_name: str = Form(...),
+#         board_name: str = Form(...)
+# ):
+#     post_schema = PostSchema(
+#         title=title if title else None,
+#         content=content if title else None,
+#         author=UserSchema(name=author_name) if author_name else None,
+#         board=BoardSchema(name=board_name) if board_name else None
+#     )
+#     async with httpx.AsyncClient() as client:
+#         response = await client.post(
+#             PTT_API_URL + "/api/posts",
+#             json=jsonable_encoder(post_schema),
+#         )
+#     return response.json()
+
+
 @app.post("/posts")
-async def forward_post(
-        title: str = Form(...),
-        content: str = Form(...),
-        author_name: str = Form(...),
-        board_name: str = Form(...)
-):
-    post_schema = PostSchema(
-        title=title if title else None,
-        content=content if title else None,
-        author=UserSchema(name=author_name) if author_name else None,
-        board=BoardSchema(name=board_name) if board_name else None
-    )
+async def forward_post(data=Body(...)):
     async with httpx.AsyncClient() as client:
         response = await client.post(
             PTT_API_URL + "/api/posts",
-            json=jsonable_encoder(post_schema),
+            json=jsonable_encoder(data),
         )
     return response.json()
 

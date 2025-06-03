@@ -1,12 +1,11 @@
-import time
 from typing import List
 
-from sqlalchemy.exc import OperationalError, SQLAlchemyError, IntegrityError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, joinedload
 
 from db.database import Base, engine, SessionLocal
 from model.ptt_content import User, Post, Comment, Board, Log
-from schema.ptt_content import PostCrawl, CommentCrawl, PostSearch, PostSchema, PostSchemaResponse, BoardSchema, \
+from schema.ptt_content import CommentCrawl, PostSearch, PostSchema, PostSchemaResponse, BoardSchema, \
     UserSchema, CommentSchema, PostDetailSchema
 
 
@@ -18,26 +17,6 @@ def create_default():
     db.close()
 
 
-def safe_commit(session: Session, retries: int = 3, delay: float = 0.5):
-    for attempt in range(retries):
-        try:
-            session.commit()
-            return
-        except IntegrityError as e:
-            if "Duplicate entry" in str(e):
-                raise
-        except OperationalError as e:
-            if "Deadlock found" in str(e):
-                session.rollback()
-                time.sleep(delay)
-                continue
-            raise
-        except Exception:
-            session.rollback()
-            raise
-    raise Exception("Deadlock could not be resolved after retries.")
-
-
 # --- User ---
 def get_or_create_user(db: Session, username: str) -> type[User] | None | User:
     user = db.query(User).filter_by(name=username).first()
@@ -46,11 +25,12 @@ def get_or_create_user(db: Session, username: str) -> type[User] | None | User:
     try:
         user = User(name=username)
         db.add(user)
-        db.flush()
+        db.commit()
+        db.refresh(user)
         return user
-    except IntegrityError:
+    except Exception as e:
         db.rollback()
-        return user
+        return None
 
 
 # ToDo : test method
@@ -59,75 +39,15 @@ def get_existing_user_map(db: Session):
     return {u.name: u for u in existing_users}
 
 
-def prepare_users_from_posts(db: Session, posts: list[PostCrawl]):
-    all_usernames = set()
-    for p in posts:
-        all_usernames.add(p.author)
-        for c in p.comments:
-            all_usernames.add(c.user)
-
-    existing_users = db.query(User).filter(User.name.in_(all_usernames)).all()
-    user_map = {u.name: u for u in existing_users}
-
-    missing_usernames = all_usernames - user_map.keys()
-    username: str
-    new_users = [User(name=username) for username in missing_usernames]
-
-    if new_users:
-        db.add_all(new_users)
-        db.flush()
-
-    for user in new_users:
-        user_map[user.name] = user
-
-    return user_map
-
-
 # --- Post ---
-def post_crawl_pydantic_to_sqlalchemy(post_input: PostCrawl, author_id: int) -> Post:
-    return Post(
-        title=post_input.title,
-        content=post_input.content,
-        created_at=post_input.created_at,
-        board_id=post_input.board_id,
-        author_id=author_id
-    )
-
-
-def post_schema_pydantic_to_sqlalchemy(post_input: PostSchema, author_id: int, board_id: int) -> Post:
-    return Post(
-        title=post_input.title,
-        content=post_input.content,
-        created_at=post_input.created_at,
-        board_id=board_id,
-        author_id=author_id
-    )
-
-
 def post_schema_sqlalchemy_to_pydantic(post_input: Post) -> PostSchema:
     return PostSchema(
         id=post_input.id,
         title=post_input.title,
         content=post_input.content,
         created_at=post_input.created_at,
-        board=BoardSchema(name=post_input.board.name),
-        author=UserSchema(name=post_input.author.name)
-    )
-
-
-def post_detail_sqlalchemy_to_pydantic(post_input: Post) -> PostDetailSchema:
-    return PostDetailSchema(
-        id=post_input.id,
-        title=post_input.title,
-        content=post_input.content,
-        created_at=post_input.created_at,
-        board=BoardSchema(name=post_input.board.name),
-        author=UserSchema(name=post_input.author.name),
-        comments=[
-            CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.created_at)
-            for c in post_input.comments
-            if post_input.comments is not None
-        ]
+        board=BoardSchema(name=post_input.board.name) if post_input.board else None,
+        author=UserSchema(name=post_input.author.name) if post_input.author else None
     )
 
 
@@ -140,7 +60,6 @@ def get_query_by_search_dic(db: Session, post_search: PostSearch):
         joinedload(Post.author),
         joinedload(Post.board)
     )
-
     filters = []
     if post_search.author:
         query = query.join(Post.author)
@@ -166,33 +85,24 @@ def get_posts_by_search_dic(db: Session, search_filter, posts_limit=50, posts_of
 
 
 def get_post_detail_by_id(db: Session, post_id: int):
-    the_post = db.query(Post).filter_by(id=post_id)
-    the_post = the_post.options(joinedload(Post.comments)).first()
-    if the_post is None:
+    post_input = db.query(Post).filter_by(id=post_id)
+    post_input = post_input.options(joinedload(Post.comments)).first()
+    if post_input is None:
         return PostSchemaResponse(result="PostNotFound")
-    post_schema = post_detail_sqlalchemy_to_pydantic(the_post)
+    post_schema = PostDetailSchema(
+        id=post_input.id,
+        title=post_input.title,
+        content=post_input.content,
+        created_at=post_input.created_at,
+        board=BoardSchema(name=post_input.board.name),
+        author=UserSchema(name=post_input.author.name),
+        comments=[
+            CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.created_at)
+            for c in post_input.comments
+            if post_input.comments is not None
+        ]
+    )
     return PostSchemaResponse(result="success", data=post_schema)
-
-
-def get_existing_post_keys(db: Session, posts: list[PostCrawl]):
-    min_date = min(p.created_at for p in posts)
-    max_date = max(p.created_at for p in posts)
-
-    authors = list(set(p.author for p in posts))
-    author_map = {
-        u.name: u.id for u in db.query(User).filter(User.name.in_(authors)).all()
-    }
-
-    post_keys = set()
-    if author_map:
-        existing_posts = db.query(Post.title, Post.author_id, Post.created_at).filter(
-            Post.created_at >= min_date,
-            Post.created_at <= max_date
-        ).all()
-
-        post_keys = set((p.title, p.author_id, p.created_at) for p in existing_posts)
-
-    return post_keys
 
 
 # ToDo: test method
@@ -209,9 +119,6 @@ def get_or_create_post(db: Session, post_input: Post):
         db.commit()
         db.refresh(post_input)
         return post_input
-    except SQLAlchemyError as e:
-        db.rollback()
-        raise e
     except Exception as e:
         db.rollback()
         raise e
@@ -221,7 +128,13 @@ def create_post_from_postschema(db: Session, post_schema: PostSchema):
     try:
         author = get_or_create_user(db, post_schema.author.name)
         board = get_or_create_board(db, post_schema.board.name)
-        new_post = post_schema_pydantic_to_sqlalchemy(post_schema, author.id, board.id)
+        new_post = Post(
+            title=post_schema.title,
+            content=post_schema.content,
+            created_at=post_schema.created_at,
+            board_id=board.id,
+            author_id=author.id
+        )
         db.add(new_post)
         db.commit()
         db.refresh(new_post)
@@ -253,8 +166,6 @@ def update_post_from_id(db: Session, post_id, post_schema: PostSchema):
         db.commit()
         db.refresh(target_post)
         post_schema.id = target_post.id
-    except SQLAlchemyError as e:
-        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
     except Exception as e:
         return PostSchemaResponse(result=f"error,{e}", data=post_schema)
 
@@ -269,8 +180,6 @@ def delete_post_from_id(db: Session, post_id):
         post_schema = post_schema_sqlalchemy_to_pydantic(target_post)
         db.delete(target_post)
         db.commit()
-    except SQLAlchemyError as e:
-        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
     except Exception as e:
         return PostSchemaResponse(result=f"error,{e}", data=post_schema)
 
@@ -302,9 +211,6 @@ def get_or_create_comment(db: Session, comment_input: Comment):
         db.commit()
         db.refresh(comment_input)
         return comment_input
-    except SQLAlchemyError as e:
-        db.rollback()
-        raise e
     except Exception as e:
         db.rollback()
         raise e
@@ -329,9 +235,6 @@ def create_comments_bulk(db: Session, comments: List[Comment]):
         db.commit()
         db.refresh(comments)
         return comments
-    except SQLAlchemyError as e:
-        db.rollback()
-        raise e
     except Exception as e:
         db.rollback()
         raise e
@@ -343,7 +246,7 @@ def get_all_boards(db: Session):
     return {b.name: b.id for b in boards}
 
 
-def get_or_create_board(db: Session, boardname: str) -> type[Board] | None | User:
+def get_or_create_board(db: Session, boardname: str) -> Board | type[Board]:
     board = db.query(Board).filter_by(name=boardname).first()
     if board:
         return board
@@ -353,9 +256,6 @@ def get_or_create_board(db: Session, boardname: str) -> type[Board] | None | Use
         db.commit()
         db.refresh(board)
         return board
-    except SQLAlchemyError as e:
-        db.rollback()
-        raise e
     except Exception as e:
         db.rollback()
         raise e

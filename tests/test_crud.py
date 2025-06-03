@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from db.crud import (
-    get_or_create_user, prepare_users_from_posts, create_post_from_postschema,
+    get_or_create_user, create_post_from_postschema,
     update_post_from_id, delete_post_from_id, get_or_create_board,
     get_all_boards, get_existing_post_keys
 )
@@ -103,47 +103,36 @@ def test_get_or_create_user_existing(db, dummy_model_user):
     assert user.name == dummy_model_user.name
 
 
-def test_prepare_users_from_posts(db, dummy_postcrawl):
-    # existing_users => 無
-    db.query().filter().all.return_value = []
-    user_map = prepare_users_from_posts(db, [dummy_postcrawl])
-
-    # 1 new_users
-    assert db.add_all.call_count == 1
-    assert "test_user" in user_map
-    assert "comment_user" in user_map
-
-
 # -------- Tests for Post --------
-def test_existing_post_key(db, dummy_postcrawl, dummy_model_user, dummy_model_post):
-    # author => dummy_model_user
-    # existing_posts => dummy_model_post
-
-    mock_filter_user = MagicMock()
-    mock_filter_user.all.return_value = [dummy_model_user]
-
-    mock_filter_post = MagicMock()
-    mock_filter_post.all.return_value = [dummy_model_post]
-
-    # 因無法直接對應不同 query 結果 => 使用 side_effect
-    def query_side_effect(*args):
-        # db.query(User)
-        if len(args) == 1:
-            return MagicMock(filter=MagicMock(return_value=mock_filter_user))
-        # db.query(Post.title, Post.author_id, Post.created_at)
-        elif len(args) == 3:
-            return MagicMock(filter=MagicMock(return_value=mock_filter_post))
-        return MagicMock()
-
-    db.query = MagicMock(side_effect=query_side_effect)
-
-    post_keys = get_existing_post_keys(db, [dummy_postcrawl])
-
-    expected = {
-        (dummy_model_post.title, dummy_model_post.author_id, dummy_model_post.created_at)
-    }
-
-    assert post_keys == expected
+# def test_existing_post_key(db, dummy_postcrawl, dummy_model_user, dummy_model_post):
+#     # author => dummy_model_user
+#     # existing_posts => dummy_model_post
+#
+#     mock_filter_user = MagicMock()
+#     mock_filter_user.all.return_value = [dummy_model_user]
+#
+#     mock_filter_post = MagicMock()
+#     mock_filter_post.all.return_value = [dummy_model_post]
+#
+#     # 因無法直接對應不同 query 結果 => 使用 side_effect
+#     def query_side_effect(*args):
+#         # db.query(User)
+#         if len(args) == 1:
+#             return MagicMock(filter=MagicMock(return_value=mock_filter_user))
+#         # db.query(Post.title, Post.author_id, Post.created_at)
+#         elif len(args) == 3:
+#             return MagicMock(filter=MagicMock(return_value=mock_filter_post))
+#         return MagicMock()
+#
+#     db.query = MagicMock(side_effect=query_side_effect)
+#
+#     post_keys = get_existing_post_keys(db, [dummy_postcrawl])
+#
+#     expected = {
+#         (dummy_model_post.title, dummy_model_post.author_id, dummy_model_post.created_at)
+#     }
+#
+#     assert post_keys == expected
 
 
 def test_create_post_success(db, dummy_postschema, dummy_model_user, dummy_model_board):

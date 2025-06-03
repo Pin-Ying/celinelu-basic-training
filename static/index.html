@@ -98,6 +98,22 @@
         document.getElementById("show-one-post").style.display = "none";
     }
 
+    function formDataToJson(formData) {
+        const jsonObject = {};
+        formData.forEach((value, key) => {
+            // 若有重複 key，處理為陣列（可選）
+            if (jsonObject[key]) {
+                if (!Array.isArray(jsonObject[key])) {
+                    jsonObject[key] = [jsonObject[key]];
+                }
+                jsonObject[key].push(value);
+            } else {
+                jsonObject[key] = value;
+            }
+        });
+        return jsonObject;
+    }
+
     function createPostForm(post, container) {
         // console.log(post);
         let row = document.createElement('div');
@@ -219,10 +235,11 @@
     function addPost() {
         let form = document.querySelector("#add-post-form");
         let formData = new FormData(form);
+        let jsonData = formDataToJson(formData);
 
         fetch(`/posts`, {
             method: 'POST',
-            body: formData
+            body: {"data":jsonData}
         })
             .then(res => res.json())
             .then(data => {

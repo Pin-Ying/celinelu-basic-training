@@ -6,8 +6,9 @@ import bs4
 import requests
 from bs4 import BeautifulSoup
 
-from db.crud import get_existing_user_map, get_or_create_user, get_or_create_post, post_crawl_pydantic_to_sqlalchemy, \
-    get_existing_comment_set, comment_pydantic_to_sqlalchemy, create_comments_bulk
+from db.crud import get_existing_user_map, get_or_create_user, get_or_create_post, get_existing_comment_set, \
+    comment_pydantic_to_sqlalchemy, create_comments_bulk
+from model.ptt_content import Post
 from schema.ptt_content import PostCrawl, CommentCrawl
 
 logging.basicConfig(
@@ -20,11 +21,13 @@ logger = logging.getLogger("ptt_crawler")
 class PttCrawler:
     BASE_URL = "https://www.ptt.cc"
 
-    def __init__(self, db, board: str, board_id: int, cutoff_date=datetime.now() - timedelta(days=365)):
+    def __init__(self, db, board: str, board_id: int, latest_post: Post = None,
+                 cutoff_date=datetime.now() - timedelta(days=365)):
         self.db = db
         self.board = board
         self.board_id = board_id
-        self.cutoff_date = cutoff_date
+        self.latest_post = latest_post
+        self.cutoff_date = latest_post.created_at if latest_post else cutoff_date
         self.session = requests.Session()
         self.session.cookies.set("over18", "1")
         self.user_map = get_existing_user_map(self.db)
@@ -38,7 +41,13 @@ class PttCrawler:
             print(f"[Error] fetch {url}: {e}")
         return None
 
-    def parse_article(self, post_a_tag: bs4.element.Tag) -> PostCrawl:
+    def is_latest_post(self, post: PostCrawl) -> bool:
+        if self.latest_post:
+            if post.title == self.latest_post.title and post.created_at == self.latest_post.created_at:
+                return True
+        return False
+
+    def parse_article(self, post_a_tag: bs4.element.Tag) -> PostCrawl | None:
         post_data = {"board_id": self.board_id}
         url = self.BASE_URL + post_a_tag.get("href")
         soup = self.get_soup(url)
@@ -94,8 +103,6 @@ class PttCrawler:
             if not soup:
                 break
 
-            crawling_page = ''  # 迴圈終止預設條件
-
             post_a_tags = []
             for tag in soup.select("div.r-list-container > div"):
                 if "r-list-sep" in tag.get("class", []):
@@ -109,14 +116,17 @@ class PttCrawler:
                 break
 
             try:
-                post = [self.parse_article(a_tag) for a_tag in post_a_tags]
-                if post:
-                    all_posts.extend(post)
-                    page_posts.extend(post)
+                for a_tag in post_a_tags:
+                    post = self.parse_article(a_tag)
+                    if post:
+                        if self.is_latest_post(post):
+                            break
+                        page_posts.append(post)
             except Exception as e:
                 logger.error(f"Error!: {e}")
 
-            logger.info(f"Finish crawling_page: {crawling_page}")
+            logger.info(f"{self.board}, crawling_page: {crawling_page} Finish")
+            crawling_page = ""  # 迴圈終止預設條件
 
             if len(page_posts) > 0:
                 page_posts.sort(key=lambda p: p.created_at)
@@ -124,6 +134,7 @@ class PttCrawler:
                     page_posts = [p for p in page_posts if p.created_at >= self.cutoff_date]
                     all_posts.extend(page_posts)
                     break
+                all_posts.extend(page_posts)
 
             prev_link = soup.select_one("div.btn-group-paging a:contains('上頁')")
             if not prev_link:
@@ -139,7 +150,13 @@ class PttCrawler:
             author = self.user_map.get(post_input.author) if self.user_map else None
             if author is None:
                 author = get_or_create_user(self.db, post_input.author)
-            new_post = post_crawl_pydantic_to_sqlalchemy(post_input, author.id)
+            new_post = Post(
+                title=post_input.title,
+                content=post_input.content,
+                created_at=post_input.created_at,
+                board_id=post_input.board_id,
+                author_id=author.id
+            )
             post = get_or_create_post(self.db, new_post)
             return post
 

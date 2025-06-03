@@ -6,6 +6,6 @@ from tasks.ptt_crawl import PttCrawler
 
 db = SessionLocal()
 latest_post = get_latest_post(db, 1)
-crawler = PttCrawler(db, board="home-sale", board_id=1, cutoff_date=latest_post.created_at)
+crawler = PttCrawler(db, board="home-sale", board_id=1, cutoff_date=datetime.now() - timedelta(days=5))
 posts = crawler.crawl()
 post_finish = crawler.save_posts_from_postcrawls(posts)

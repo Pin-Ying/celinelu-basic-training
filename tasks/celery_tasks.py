@@ -36,7 +36,7 @@ def crawl_single_board_task(task_id, board: str, board_id: int):
         latest_post = get_latest_post(db, board_id)
 
         # 爬取
-        crawler = PttCrawler(db, board, board_id, latest_post.created_at if latest_post else None)
+        crawler = PttCrawler(db, board, board_id, latest_post=latest_post) if latest_post else PttCrawler(db, board, board_id)
         posts = crawler.crawl()
 
         # 存入

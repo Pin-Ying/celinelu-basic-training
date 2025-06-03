@@ -7,8 +7,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from db.crud import get_existing_user_map, get_or_create_user, get_or_create_post, get_existing_comment_set, \
-    comment_pydantic_to_sqlalchemy, create_comments_bulk
-from model.ptt_content import Post
+    create_comments_bulk
+from model.ptt_content import Post, Comment
 from schema.ptt_content import PostCrawl, CommentCrawl
 
 logging.basicConfig(
@@ -95,6 +95,7 @@ class PttCrawler:
     def crawl(self) -> List[PostCrawl]:
         crawling_page = "index.html"
         all_posts = []
+        found_latest_post = False
 
         while crawling_page != '':
             page_posts = []
@@ -115,17 +116,20 @@ class PttCrawler:
             if not post_a_tags:
                 break
 
-            try:
-                for a_tag in post_a_tags:
+            for a_tag in post_a_tags:
+                try:
                     post = self.parse_article(a_tag)
                     if post:
                         if self.is_latest_post(post):
+                            found_latest_post = True
                             break
                         page_posts.append(post)
-            except Exception as e:
-                logger.error(f"Error!: {e}")
 
-            logger.info(f"{self.board}, crawling_page: {crawling_page} Finish")
+                except Exception as e:
+                    logger.error(f"Error!: {e}")
+                    continue
+
+            logger.info(f"{self.board}, crawling_page: {crawling_page} Finish.")
             crawling_page = ""  # 迴圈終止預設條件
 
             if len(page_posts) > 0:
@@ -135,6 +139,9 @@ class PttCrawler:
                     all_posts.extend(page_posts)
                     break
                 all_posts.extend(page_posts)
+
+            if found_latest_post:
+                break
 
             prev_link = soup.select_one("div.btn-group-paging a:contains('上頁')")
             if not prev_link:
@@ -181,7 +188,12 @@ class PttCrawler:
                     comment_user = get_or_create_user(self.db, comment.user)
                 self.user_map[comment.user] = comment_user
 
-                new_comment = comment_pydantic_to_sqlalchemy(comment, comment_user.id, post_id)
+                new_comment = Comment(
+                    post_id=post_id,
+                    user_id=comment_user.id,
+                    content=comment.content,
+                    created_at=comment.created_at
+                )
                 new_comments.append(new_comment)
 
             comments = create_comments_bulk(self.db, new_comments)

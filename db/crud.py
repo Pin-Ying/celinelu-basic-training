@@ -1,14 +1,13 @@
 from typing import List
 
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, joinedload
 
 from db.database import Base, engine, SessionLocal
 from model.ptt_content import User, Post, Comment, Board, Log
-from schema.ptt_content import CommentCrawl, PostSearch, PostSchema, PostSchemaResponse, BoardSchema, \
-    UserSchema
+from schema.ptt_content import PostSearch, PostSchema
 
 
+# ToDo: check, 這裡的程式碼被大幅度修改，要確認有沒有受到影響的程式碼(test method)
 def create_default():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
@@ -96,52 +95,25 @@ def get_or_create_post(db: Session, post_input: Post):
         raise e
 
 
-def create_post_from_postschema(db: Session, post_schema: PostSchema):
-    try:
-        author = get_or_create_user(db, post_schema.author.name)
-        board = get_or_create_board(db, post_schema.board.name)
-        new_post = Post(
-            title=post_schema.title,
-            content=post_schema.content,
-            created_at=post_schema.created_at,
-            board_id=board.id,
-            author_id=author.id
-        )
-        db.add(new_post)
-        db.commit()
-        db.refresh(new_post)
-        post_schema.id = new_post.id
-        post_schema.created_at = new_post.created_at
-
-    except SQLAlchemyError as e:
-        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
-    except Exception as e:
-        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
-
-    return PostSchemaResponse(result="success", data=post_schema)
-
-
 def update_post_from_id(db: Session, post_id, post_schema: PostSchema):
     target_post = db.get(Post, post_id)
     author = get_or_create_user(db, post_schema.author.name)
     board = get_or_create_board(db, post_schema.board.name)
     if target_post is None:
-        return PostSchemaResponse(result="PostNotFound")
+        return None
     target_post.title = post_schema.title
     target_post.content = post_schema.content
     target_post.created_at = post_schema.created_at
     target_post.author = author
     target_post.board = board
-
     try:
         db.add(target_post)
         db.commit()
         db.refresh(target_post)
-        post_schema.id = target_post.id
+        return target_post
     except Exception as e:
-        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
-
-    return PostSchemaResponse(result="success", data=post_schema)
+        db.rollback()
+        raise e
 
 
 def delete_post_from_id(db: Session, post_id):
@@ -159,15 +131,6 @@ def delete_post_from_id(db: Session, post_id):
 
 
 # --- Comment ---
-def comment_pydantic_to_sqlalchemy(comment_input: CommentCrawl, user_id: int, post_id: int):
-    return Comment(
-        post_id=post_id,
-        user_id=user_id,
-        content=comment_input.content,
-        created_at=comment_input.created_at
-    )
-
-
 # ToDo: test method
 def get_or_create_comment(db: Session, comment_input: Comment):
     comment = db.query(Comment).filter_by(

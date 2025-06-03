@@ -5,8 +5,9 @@ import pytz
 from fastapi import APIRouter, FastAPI, Depends, Form, Body
 from sqlalchemy.exc import SQLAlchemyError
 
-from db.crud import create_post_from_postschema, update_post_from_id, delete_post_from_id, \
-    get_query_by_search_dic, get_post_detail_by_id, get_posts_by_search_dic
+from db.crud import update_post_from_id, delete_post_from_id, \
+    get_query_by_search_dic, get_post_detail_by_id, get_posts_by_search_dic, get_or_create_board, get_or_create_user, \
+    get_or_create_post
 from db.database import SessionLocal
 from model.ptt_content import Post
 from schema.ptt_content import PostSchema, PostSearch, UserSchema, BoardSchema, PostSchemaResponse, StatisticsResponse, \
@@ -78,8 +79,24 @@ def form_to_postschema(
     )
 
 
-def handle_create_post(db, post_data: PostSchema):
-    return create_post_from_postschema(db, post_data)
+def handle_create_post(db, post_schema: PostSchema):
+    try:
+        author = get_or_create_user(db, post_schema.author.name)
+        board = get_or_create_board(db, post_schema.board.name)
+        new_post = Post(
+            title=post_schema.title,
+            content=post_schema.content,
+            created_at=post_schema.created_at,
+            board_id=board.id,
+            author_id=author.id
+        )
+        post_created = get_or_create_post(db, new_post)
+
+        post_schema.id = post_created.id
+        post_schema.created_at = post_created.created_at
+        return PostSchemaResponse(result="success", data=post_schema)
+    except Exception as e:
+        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
 
 
 # --- GET ---
@@ -134,19 +151,32 @@ async def add_post(post_add: PostSchema = Body(...), db=Depends(get_db)):
 
 @router.post("/api/posts/form")
 async def create_post_from_form(
-        post_data: PostSchema = Depends(form_to_postschema), db=Depends(get_db)):
-    return handle_create_post(db, post_data)
+        post_schema: PostSchema = Depends(form_to_postschema), db=Depends(get_db)):
+    return handle_create_post(db, post_schema)
 
 
 # --- PUT ---
 @router.put("/api/posts/{post_id}", response_model=PostSchemaResponse)
 async def update_post(post_id: int, db=Depends(get_db), post_update: PostSchema = Body(...)):
-    return update_post_from_id(db, post_id, post_update)
-
+    try:
+        target_post = update_post_from_id(db, post_id, post_update)
+        if target_post is None:
+            return PostSchemaResponse(result="PostNotFound")
+        post_update.id = target_post.id
+        return PostSchemaResponse(result="success", data=post_update)
+    except Exception as e:
+        return PostSchemaResponse(result=f"error,{e}", data=post_update)
 
 @router.put("/api/posts/form/{post_id}", response_model=PostSchemaResponse)
 async def update_post_from_form(post_id, db=Depends(get_db), post_update: PostSchema = Depends(form_to_postschema)):
-    return update_post_from_id(db, post_id, post_update)
+    try:
+        target_post = update_post_from_id(db, post_id, post_update)
+        if target_post is None:
+            return PostSchemaResponse(result="PostNotFound")
+        post_update.id = target_post.id
+        return PostSchemaResponse(result="success", data=post_update)
+    except Exception as e:
+        return PostSchemaResponse(result=f"error,{e}", data=post_update)
 
 
 # --- DELETE ---
@@ -157,7 +187,6 @@ async def delete_post(post_id, db=Depends(get_db)):
         if target_post is None:
             return PostSchemaResponse(result="PostNotFound")
         post_schema = post_schema_sqlalchemy_to_pydantic(target_post)
+        return PostSchemaResponse(result="success", data=post_schema)
     except Exception as e:
         return PostSchemaResponse(result=f"error,{e}", data=post_schema)
-
-    return PostSchemaResponse(result="success", data=post_schema)

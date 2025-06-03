@@ -13,7 +13,7 @@ datetime_now = lambda: datetime.now(tz)
 
 class User(Base):
     __tablename__ = 'users'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), unique=True, primary_key=True, nullable=False)
     posts = relationship('Post', back_populates='author')
     comments = relationship('Comment', back_populates='user')
@@ -21,14 +21,14 @@ class User(Base):
 
 class Board(Base):
     __tablename__ = 'boards'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), unique=True, nullable=False)
     posts = relationship('Post', back_populates='board')
 
 
 class Post(Base):
     __tablename__ = 'posts'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(255), nullable=False)
     content = Column(LONGTEXT)
     created_at = Column(DateTime, default=datetime_now)
@@ -46,7 +46,7 @@ class Post(Base):
 
 class Comment(Base):
     __tablename__ = 'comments'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     content = Column(Text)
     created_at = Column(Text)
     post_id = Column(Integer, ForeignKey('posts.id'))
@@ -62,7 +62,7 @@ class Comment(Base):
 
 class Log(Base):
     __tablename__ = "logs"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     task_id = Column(Text)
     level = Column(String(10))
     message = Column(Text)

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from db.crud import (
-    get_or_create_user, create_post_from_postschema,
+    get_or_create_user,
     update_post_from_id, delete_post_from_id, get_or_create_board,
     get_all_boards
 )
@@ -104,50 +104,6 @@ def test_get_or_create_user_existing(db, dummy_model_user):
 
 
 # -------- Tests for Post --------
-# def test_existing_post_key(db, dummy_postcrawl, dummy_model_user, dummy_model_post):
-#     # author => dummy_model_user
-#     # existing_posts => dummy_model_post
-#
-#     mock_filter_user = MagicMock()
-#     mock_filter_user.all.return_value = [dummy_model_user]
-#
-#     mock_filter_post = MagicMock()
-#     mock_filter_post.all.return_value = [dummy_model_post]
-#
-#     # 因無法直接對應不同 query 結果 => 使用 side_effect
-#     def query_side_effect(*args):
-#         # db.query(User)
-#         if len(args) == 1:
-#             return MagicMock(filter=MagicMock(return_value=mock_filter_user))
-#         # db.query(Post.title, Post.author_id, Post.created_at)
-#         elif len(args) == 3:
-#             return MagicMock(filter=MagicMock(return_value=mock_filter_post))
-#         return MagicMock()
-#
-#     db.query = MagicMock(side_effect=query_side_effect)
-#
-#     post_keys = get_existing_post_keys(db, [dummy_postcrawl])
-#
-#     expected = {
-#         (dummy_model_post.title, dummy_model_post.author_id, dummy_model_post.created_at)
-#     }
-#
-#     assert post_keys == expected
-
-
-def test_create_post_success(db, dummy_postschema, dummy_model_user, dummy_model_board):
-    with mock.patch("db.crud.get_or_create_user") as mock_get_or_create_user, \
-            mock.patch("db.crud.get_or_create_board") as mock_get_or_create_board:
-        mock_get_or_create_user.return_value = dummy_model_user
-        mock_get_or_create_board.return_value = dummy_model_board
-
-        result = create_post_from_postschema(db, dummy_postschema)
-
-        assert result.result == "success"
-        assert result.data.title == dummy_postschema.title
-        assert result.data.created_at == dummy_postschema.created_at
-
-
 def test_update_post_from_id_success(db, dummy_postschema, dummy_model_post):
     db.query().filter().first.return_value = dummy_model_post
     response = update_post_from_id(db, dummy_model_post.id, dummy_postschema)

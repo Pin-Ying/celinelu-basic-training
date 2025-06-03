@@ -1,8 +1,8 @@
 import time
+from typing import List
 
 from sqlalchemy.exc import OperationalError, SQLAlchemyError, IntegrityError
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy.util import bool_or_str
 
 from db.database import Base, engine, SessionLocal
 from model.ptt_content import User, Post, Comment, Board, Log
@@ -15,17 +15,6 @@ def create_default():
     db = SessionLocal()
     all_boards = {'home-sale': 1, 'basketballTW': 2, 'NBA': 3, 'car': 4, 'Lifeismoney': 5}
     seed_boards(db, all_boards)
-    db.close()
-
-
-def clean_tables():
-    db = SessionLocal()
-    db.query(Comment).delete()
-    db.query(Post).delete()
-    db.query(User).delete()
-    db.query(Log).delete()
-    db.query(Board).delete()
-    db.commit()
     db.close()
 
 
@@ -51,7 +40,7 @@ def safe_commit(session: Session, retries: int = 3, delay: float = 0.5):
 
 # --- User ---
 def get_or_create_user(db: Session, username: str) -> type[User] | None | User:
-    user = db.query(User).get({"name": username})
+    user = db.query(User).filter_by(name=username).first()
     if user:
         return user
     try:
@@ -208,88 +197,25 @@ def get_existing_post_keys(db: Session, posts: list[PostCrawl]):
 
 # ToDo: test method
 def get_or_create_post(db: Session, post_input: Post):
-    post = db.query(Post).get({
-        "title": post_input.title,
-        "created_at": post_input.created_at,
-        "author_id": post_input.author_id
-    })
+    post = db.query(Post).filter_by(
+        title=post_input.title,
+        author_id=post_input.author_id,
+        created_at=post_input.created_at
+    ).first()
     if post:
         return post
     try:
         db.add(post_input)
-        db.flush()
+        db.commit()
+        db.refresh(post_input)
         return post_input
-    except IntegrityError:
+    except SQLAlchemyError as e:
         db.rollback()
-        return post
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise e
 
-
-# def create_posts(db: Session, posts: list[PostCrawl], batch_size: int = 20):
-#     created_posts = []
-#
-#     try:
-#         existing_keys = get_existing_post_keys(db, posts)
-#         user_map = prepare_users_from_posts(db, posts)
-#
-#         for i in range(0, len(posts), batch_size):
-#             posts_batch = posts[i:i + batch_size]
-#
-#             for post_input in posts_batch:
-#                 # 取得作者
-#                 author = user_map[post_input.author]
-#                 if author is None:
-#                     user = get_or_create_user(db, post_input.author)  # ToDo => DeadLock
-#                     author = user
-#                     user_map[post_input.author] = user
-#
-#                 post_key = (post_input.title, author.id, post_input.created_at)
-#                 if post_key in existing_keys:
-#                     continue
-#
-#                 new_post = post_crawl_pydantic_to_sqlalchemy(post_input, author.id)
-#                 db.add(new_post)
-#                 db.flush()  # 確保拿到 post.id # ToDo => DeadLock
-#
-#                 existing_keys.add(post_key)
-#
-#                 # 處理留言
-#                 create_comments_from_postcrawl(db, new_post, post_input, user_map)
-#
-#                 created_posts.append(new_post)
-#
-#             safe_commit(db)
-#     except SQLAlchemyError as e:
-#         db.rollback()
-#         raise e
-#     except Exception as e:
-#         db.rollback()
-#         raise e
-#
-#     return created_posts
-
-
-# def create_post_from_postcrawl(db: Session, post_input: PostCrawl):
-#     try:
-#         # 取得作者
-#         author = get_or_create_user(post_input.author)
-#
-#         post_key = (post_input.title, author.id, post_input.created_at)
-#         if post_key in existing_keys:
-#             return
-#
-#         new_post = post_crawl_pydantic_to_sqlalchemy(post_input, author.id)
-#         db.add(new_post)
-#         db.flush()  # 確保拿到 post.id # ToDo => DeadLock
-#
-#         existing_keys.add(post_key)
-#
-#         # 處理留言
-#         create_comments_from_postcrawl(db, new_post, post_input, user_map)
-#
-#         created_posts.append(new_post)
-#     except Exception as e:
-#         db.rollback()
-#         raise e
 
 def create_post_from_postschema(db: Session, post_schema: PostSchema):
     try:
@@ -311,7 +237,7 @@ def create_post_from_postschema(db: Session, post_schema: PostSchema):
 
 
 def update_post_from_id(db: Session, post_id, post_schema: PostSchema):
-    target_post = db.query(Post).filter(Post.id == post_id).first()
+    target_post = db.get(Post, post_id)
     author = get_or_create_user(db, post_schema.author.name)
     board = get_or_create_board(db, post_schema.board.name)
     if target_post is None:
@@ -336,7 +262,7 @@ def update_post_from_id(db: Session, post_id, post_schema: PostSchema):
 
 
 def delete_post_from_id(db: Session, post_id):
-    target_post = db.query(Post).filter(Post.id == post_id).first()
+    target_post = db.get(Post, post_id)
     if target_post is None:
         return PostSchemaResponse(result="PostNotFound")
     try:
@@ -352,7 +278,7 @@ def delete_post_from_id(db: Session, post_id):
 
 
 # --- Comment ---
-def comment_input_pydantic_to_sqlalchemy(comment_input: CommentCrawl, user_id: int, post_id: int):
+def comment_pydantic_to_sqlalchemy(comment_input: CommentCrawl, user_id: int, post_id: int):
     return Comment(
         post_id=post_id,
         user_id=user_id,
@@ -363,46 +289,52 @@ def comment_input_pydantic_to_sqlalchemy(comment_input: CommentCrawl, user_id: i
 
 # ToDo: test method
 def get_or_create_comment(db: Session, comment_input: Comment):
-    comment = db.query(Comment).get({
-        "post_id": comment_input.post_id,
-        "user_id": comment_input.user_id,
-        "content": comment_input.content,
-        "created_at": comment_input.created_at
-    })
+    comment = db.query(Comment).filter_by(
+        post_id=comment_input.post_id,
+        user_id=comment_input.user_id,
+        content=comment_input.content,
+        created_at=comment_input.created_at
+    ).first()
     if comment:
         return comment
     try:
         db.add(comment_input)
-        db.flush()
+        db.commit()
+        db.refresh(comment_input)
         return comment_input
-    except IntegrityError:
+    except SQLAlchemyError as e:
         db.rollback()
-        return comment
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise e
 
 
-def get_existing_comment_sets(db: Session, post_id: int):
-    return db.query(Comment.user, Comment.content, Comment.created_at).filter_by(post_id=post_id).all()
+def get_existing_comment_set(db: Session, post_id: int) -> List:
+    comments = (
+        db.query(Comment)
+        .filter_by(post_id=post_id)
+        .options(joinedload(Comment.user))
+        .all()
+    )
+    if comments:
+        return [(comment.user.name, comment.content, comment.created_at) for comment in comments]
+
+    return []
 
 
-def create_comments_from_postcrawl(db: Session, new_post, post_input: PostCrawl, user_map):
-    existing_comment_rows = db.query(
-        Comment.user, Comment.content, Comment.created_at
-    ).filter_by(post_id=new_post.id).all()
-    seen_comments = set(existing_comment_rows)
-
-    for c in post_input.comments:
-        comment_key = (c.user, c.content, c.created_at)
-        if comment_key in seen_comments:
-            continue
-        seen_comments.add(comment_key)
-
-        comment_user = user_map.get(c.user)
-        if comment_user is None:
-            comment_user = get_or_create_user(db, c.user)
-            user_map[c.user] = comment_user
-
-        comment = comment_input_pydantic_to_sqlalchemy(c, comment_user.id, new_post.id)
-        db.add(comment)
+def create_comments_bulk(db: Session, comments: List[Comment]):
+    try:
+        db.add_all(comments)
+        db.commit()
+        db.refresh(comments)
+        return comments
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise e
 
 
 # --- Board ---
@@ -412,17 +344,21 @@ def get_all_boards(db: Session):
 
 
 def get_or_create_board(db: Session, boardname: str) -> type[Board] | None | User:
-    board = db.query(Board).get({"name": boardname})
+    board = db.query(Board).filter_by(name=boardname).first()
     if board:
         return board
     try:
         board = Board(name=boardname)
         db.add(board)
-        db.flush()
+        db.commit()
+        db.refresh(board)
         return board
-    except IntegrityError:
+    except SQLAlchemyError as e:
         db.rollback()
-        return board
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise e
 
 
 def seed_boards(db: Session, board_dic: dict):
@@ -434,8 +370,8 @@ def seed_boards(db: Session, board_dic: dict):
 
 
 # --- Log ---
-def log_crawl_result(db: Session, message: str, level: str = "INFO"):
-    log = Log(message=message, level=level)
+def log_crawl_result(db: Session, task_id: str, message: str, level: str = "INFO"):
+    log = Log(task_id=task_id, message=message, level=level)
     db.add(log)
     db.commit()
 

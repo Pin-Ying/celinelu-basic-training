@@ -1,7 +1,12 @@
+from unittest import mock
 from unittest.mock import MagicMock
 from datetime import datetime, timedelta
+
+import pytest
 from bs4 import BeautifulSoup
 
+from model.ptt_content import User
+from schema.ptt_content import PostCrawl, CommentCrawl
 from tasks.ptt_crawl import PttCrawler
 
 # 模擬文章 HTML
@@ -78,12 +83,39 @@ INDEX_HTML_2 = """
 """
 
 
+@pytest.fixture
+def dummy_postcrawl():
+    return PostCrawl(
+        title="test_post_crawl",
+        content="test_content",
+        created_at=datetime.now(),
+        board_id=1,
+        author="test_user",
+        comments=[
+            CommentCrawl(user="comment_user", content="test_comment_content", created_at=datetime.now().isoformat())
+        ]
+    )
+
+
+@pytest.fixture
+def db():
+    return MagicMock()
+
+
+@pytest.fixture
+def dummy_model_user():
+    return User(
+        id=1,
+        name="test_user"
+    )
+
+
 def test_parse_article_from_inline_html():
-    crawler = PttCrawler(db=None, board="test", board_id=1)
+    crawler = PttCrawler(db, board="Lifeismoney", board_id=1)
     crawler.get_soup = MagicMock(return_value=BeautifulSoup(ARTICLE_HTML, "html.parser"))
 
     a_tag = MagicMock()
-    a_tag.get.return_value = "/bbs/test/1234.html"
+    a_tag.get.return_value = "/bbs/Lifeismoney/1234.html"
 
     post = crawler.parse_article(a_tag)
 
@@ -95,7 +127,7 @@ def test_parse_article_from_inline_html():
 
 
 def test_crawl_with_inline_html():
-    crawler = PttCrawler(None, 'Lifeismoney', 5, datetime(2024,5,2))
+    crawler = PttCrawler(db, 'Lifeismoney', 5, datetime(2024, 5, 2))
 
     def mock_get_soup(url):
         if url.endswith("index.html"):
@@ -115,3 +147,4 @@ def test_crawl_with_inline_html():
         assert post.author == "Tester"
         assert post.title == "Test Title"
         assert post.created_at == datetime.strptime("Fri May 23 12:00:00 2025", "%a %b %d %H:%M:%S %Y")
+

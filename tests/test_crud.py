@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from db.crud import (
-    get_or_create_user, prepare_users_from_posts, create_post_from_postschema, create_posts,
+    get_or_create_user, prepare_users_from_posts, create_post_from_postschema,
     update_post_from_id, delete_post_from_id, get_or_create_board,
     get_all_boards, get_existing_post_keys
 )
@@ -157,17 +157,6 @@ def test_create_post_success(db, dummy_postschema, dummy_model_user, dummy_model
         assert result.result == "success"
         assert result.data.title == dummy_postschema.title
         assert result.data.created_at == dummy_postschema.created_at
-
-
-def test_create_posts_bulk_success(db, dummy_postcrawl):
-    with mock.patch("db.crud.get_existing_post_keys") as mock_get_existing_post_keys:
-        mock_get_existing_post_keys.return_value = set()
-        result = create_posts(db, [dummy_postcrawl])
-    assert len(result) == 1
-    assert isinstance(result[0], Post)
-    assert result[0].title == dummy_postcrawl.title
-    assert db.add.call_count == 2  # 1 post, 1 comment
-    assert db.commit.called
 
 
 def test_update_post_from_id_success(db, dummy_postschema, dummy_model_post):

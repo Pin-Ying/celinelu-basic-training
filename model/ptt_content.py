@@ -14,7 +14,7 @@ datetime_now = lambda: datetime.now(tz)
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    name = Column(String(255), unique=True, nullable=False)
+    name = Column(String(255), unique=True, primary_key=True, nullable=False)
     posts = relationship('Post', back_populates='author')
     comments = relationship('Comment', back_populates='user')
 
@@ -56,13 +56,14 @@ class Comment(Base):
     user = relationship('User', back_populates='comments')
 
     __table_args__ = (
-        UniqueConstraint('post_id', 'user_id', 'content', 'created_at', name='uq_title_author_created_at'),
+        UniqueConstraint('post_id', 'user_id', 'content', 'created_at', name='uq_post_author_created_at'),
     )
 
 
 class Log(Base):
     __tablename__ = "logs"
     id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Text)
     level = Column(String(10))
     message = Column(Text)
     created_at = Column(DateTime, default=datetime_now)

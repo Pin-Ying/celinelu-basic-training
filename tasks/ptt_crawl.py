@@ -1,11 +1,14 @@
+import logging
+from datetime import datetime, timedelta
 from typing import List
 
 import bs4
-from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
 import requests
-import logging
-from schema.ptt_content import PostCrawl
+from bs4 import BeautifulSoup
+
+from db.crud import get_existing_user_map, get_or_create_user, get_or_create_post, post_crawl_pydantic_to_sqlalchemy, \
+    get_existing_comment_set, comment_pydantic_to_sqlalchemy, create_comments_bulk
+from schema.ptt_content import PostCrawl, CommentCrawl
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,6 +27,7 @@ class PttCrawler:
         self.cutoff_date = cutoff_date
         self.session = requests.Session()
         self.session.cookies.set("over18", "1")
+        self.user_map = get_existing_user_map(self.db)
 
     def get_soup(self, url):
         try:
@@ -127,3 +131,67 @@ class PttCrawler:
             crawling_page = prev_link["href"].split("/")[-1]
 
         return all_posts
+
+    # --- save data to db ---
+    def save_single_post(self, post_input: PostCrawl):
+        try:
+            # 取得作者
+            author = self.user_map.get(post_input.author) if self.user_map else None
+            if author is None:
+                author = get_or_create_user(self.db, post_input.author)
+            new_post = post_crawl_pydantic_to_sqlalchemy(post_input, author.id)
+            post = get_or_create_post(self.db, new_post)
+            return post
+
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def save_comments_bulk(self, comments_inputs: List[CommentCrawl], post_id: int):
+        try:
+            new_comments = []
+            existing_comment_set = get_existing_comment_set(self.db, post_id)
+            seen_comments = set(existing_comment_set)
+
+            for comment in comments_inputs:
+                comment_key = (comment.user, comment.content, comment.created_at)
+                if comment_key in seen_comments:
+                    continue
+                seen_comments.add(comment_key)
+
+                comment_user = self.user_map.get(comment.user) if self.user_map else None
+                if comment_user is None:
+                    comment_user = get_or_create_user(self.db, comment.user)
+                self.user_map[comment.user] = comment_user
+
+                new_comment = comment_pydantic_to_sqlalchemy(comment, comment_user.id, post_id)
+                new_comments.append(new_comment)
+
+            comments = create_comments_bulk(self.db, new_comments)
+
+            return comments
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def save_posts_from_postcrawls(self, post_inputs: List[PostCrawl]):
+        try:
+            post_finish = []
+            for post_input in post_inputs:
+                try:
+                    # 將文章先加入資料庫
+                    post_result = self.save_single_post(post_input)
+
+                    # 若該文章有留言，加入資料庫
+                    if post_result and post_input.comments:
+                        post_finish.append(post_result)
+                        self.save_comments_bulk(post_input.comments, post_result.id)
+                except Exception as e:
+                    self.db.rollback()
+                    logger.error(f"Error!: {e}")
+                    continue
+
+            return post_finish
+        except Exception as e:
+            self.db.rollback()
+            raise e

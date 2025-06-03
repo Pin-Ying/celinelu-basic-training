@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 from db.database import Base, engine, SessionLocal
 from model.ptt_content import User, Post, Comment, Board, Log
 from schema.ptt_content import CommentCrawl, PostSearch, PostSchema, PostSchemaResponse, BoardSchema, \
-    UserSchema, CommentSchema, PostDetailSchema
+    UserSchema
 
 
 def create_default():
@@ -30,7 +30,7 @@ def get_or_create_user(db: Session, username: str) -> type[User] | None | User:
         return user
     except Exception as e:
         db.rollback()
-        return None
+        raise e
 
 
 # ToDo : test method
@@ -40,17 +40,6 @@ def get_existing_user_map(db: Session):
 
 
 # --- Post ---
-def post_schema_sqlalchemy_to_pydantic(post_input: Post) -> PostSchema:
-    return PostSchema(
-        id=post_input.id,
-        title=post_input.title,
-        content=post_input.content,
-        created_at=post_input.created_at,
-        board=BoardSchema(name=post_input.board.name) if post_input.board else None,
-        author=UserSchema(name=post_input.author.name) if post_input.author else None
-    )
-
-
 def get_latest_post(db: Session, board: int):
     return db.query(Post).filter_by(board_id=board).order_by(Post.created_at.desc()).first()
 
@@ -79,30 +68,13 @@ def get_query_by_search_dic(db: Session, post_search: PostSearch):
 
 
 def get_posts_by_search_dic(db: Session, search_filter, posts_limit=50, posts_offset=0):
-    all_posts = get_query_by_search_dic(db, search_filter).offset(posts_offset).limit(posts_limit).all()
-    post_schema_list = [post_schema_sqlalchemy_to_pydantic(p) for p in all_posts]
-    return PostSchemaResponse(result="success", data=post_schema_list)
+    return get_query_by_search_dic(db, search_filter).offset(posts_offset).limit(posts_limit).all()
 
 
 def get_post_detail_by_id(db: Session, post_id: int):
     post_input = db.query(Post).filter_by(id=post_id)
     post_input = post_input.options(joinedload(Post.comments)).first()
-    if post_input is None:
-        return PostSchemaResponse(result="PostNotFound")
-    post_schema = PostDetailSchema(
-        id=post_input.id,
-        title=post_input.title,
-        content=post_input.content,
-        created_at=post_input.created_at,
-        board=BoardSchema(name=post_input.board.name),
-        author=UserSchema(name=post_input.author.name),
-        comments=[
-            CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.created_at)
-            for c in post_input.comments
-            if post_input.comments is not None
-        ]
-    )
-    return PostSchemaResponse(result="success", data=post_schema)
+    return post_input
 
 
 # ToDo: test method
@@ -175,15 +147,15 @@ def update_post_from_id(db: Session, post_id, post_schema: PostSchema):
 def delete_post_from_id(db: Session, post_id):
     target_post = db.get(Post, post_id)
     if target_post is None:
-        return PostSchemaResponse(result="PostNotFound")
+        return None
     try:
-        post_schema = post_schema_sqlalchemy_to_pydantic(target_post)
         db.delete(target_post)
         db.commit()
+        db.refresh(target_post)
+        return target_post
     except Exception as e:
-        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
-
-    return PostSchemaResponse(result="success", data=post_schema)
+        db.rollback()
+        raise e
 
 
 # --- Comment ---

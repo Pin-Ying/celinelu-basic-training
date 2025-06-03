@@ -82,7 +82,7 @@ def crawl_all_boards():
             tasks_log.s(task_id, "All Boards Finished! Task Finish.")
         ).apply_async()
     except Exception as e:
-        log_crawl_result(db, f"Error： {e}", "ERROR")
+        log_crawl_result(db, task_id, f"Error： {e}", "ERROR")
         logger.error(f"Error： {e}")
     finally:
         db.close()

@@ -7,7 +7,7 @@ import pytest
 from db.crud import (
     get_or_create_user, create_post_from_postschema,
     update_post_from_id, delete_post_from_id, get_or_create_board,
-    get_all_boards, get_existing_post_keys
+    get_all_boards
 )
 from model.ptt_content import Post, User, Board, Comment
 from schema.ptt_content import PostCrawl, CommentCrawl, PostSchema, UserSchema, BoardSchema, CommentSchema

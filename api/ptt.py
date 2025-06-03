@@ -8,7 +8,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from db.crud import create_post_from_postschema, update_post_from_id, delete_post_from_id, \
     get_query_by_search_dic, get_post_detail_by_id, get_posts_by_search_dic
 from db.database import SessionLocal
-from schema.ptt_content import PostSchema, PostSearch, UserSchema, BoardSchema, PostSchemaResponse, StatisticsResponse
+from model.ptt_content import Post
+from schema.ptt_content import PostSchema, PostSearch, UserSchema, BoardSchema, PostSchemaResponse, StatisticsResponse, \
+    PostDetailSchema, CommentSchema
 
 app = FastAPI()
 router = APIRouter()
@@ -49,6 +51,17 @@ def post_search_query(
     )
 
 
+def post_schema_sqlalchemy_to_pydantic(post_input: Post) -> PostSchema:
+    return PostSchema(
+        id=post_input.id,
+        title=post_input.title,
+        content=post_input.content,
+        created_at=post_input.created_at,
+        board=BoardSchema(name=post_input.board.name) if post_input.board else None,
+        author=UserSchema(name=post_input.author.name) if post_input.author else None
+    )
+
+
 def form_to_postschema(
         title: str = Form(...),
         content: str = Form(...),
@@ -77,12 +90,30 @@ async def get_posts(search_filter: PostSearch = Depends(post_search_query),
                     limit=50,
                     page=1):
     offset = (int(page) - 1) * int(limit)
-    return get_posts_by_search_dic(db, search_filter, limit, offset)
+    all_posts = get_posts_by_search_dic(db, search_filter, limit, offset)
+    post_schema_list = [post_schema_sqlalchemy_to_pydantic(p) for p in all_posts]
+    return PostSchemaResponse(result="success", data=post_schema_list)
 
 
 @router.get("/api/posts/{post_id}", response_model=PostSchemaResponse)
 async def get_post(db=Depends(get_db), post_id=None):
-    return get_post_detail_by_id(db, post_id)
+    post_input = get_post_detail_by_id(db, post_id)
+    if post_input is None:
+        return PostSchemaResponse(result="PostNotFound")
+    post_schema = PostDetailSchema(
+        id=post_input.id,
+        title=post_input.title,
+        content=post_input.content,
+        created_at=post_input.created_at,
+        board=BoardSchema(name=post_input.board.name),
+        author=UserSchema(name=post_input.author.name),
+        comments=[
+            CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.created_at)
+            for c in post_input.comments
+            if post_input.comments is not None
+        ]
+    )
+    return PostSchemaResponse(result="success", data=post_schema)
 
 
 @router.get("/api/statistics", response_model=StatisticsResponse)
@@ -121,4 +152,12 @@ async def update_post_from_form(post_id, db=Depends(get_db), post_update: PostSc
 # --- DELETE ---
 @router.delete("/api/posts/{post_id}", response_model=PostSchemaResponse)
 async def delete_post(post_id, db=Depends(get_db)):
-    return delete_post_from_id(db, post_id)
+    try:
+        target_post = delete_post_from_id(db, post_id)
+        if target_post is None:
+            return PostSchemaResponse(result="PostNotFound")
+        post_schema = post_schema_sqlalchemy_to_pydantic(target_post)
+    except Exception as e:
+        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
+
+    return PostSchemaResponse(result="success", data=post_schema)

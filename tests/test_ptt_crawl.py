@@ -99,6 +99,8 @@ def dummy_postcrawl():
 
 @pytest.fixture
 def db():
+    db = MagicMock()
+    db.query().all.return_value = {}
     return MagicMock()
 
 

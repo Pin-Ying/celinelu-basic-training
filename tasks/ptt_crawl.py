@@ -11,6 +11,8 @@ from db.crud import get_existing_user_map, get_or_create_user, get_or_create_pos
 from model.ptt_content import Post, Comment
 from schema.ptt_content import PostCrawl, CommentCrawl
 
+# ToDo: Test method
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
@@ -97,6 +99,7 @@ class PttCrawler:
         all_posts = []
         found_latest_post = False
 
+        # 爬取文章列表 => crawling_page 為正在爬取的頁面
         while crawling_page != '':
             page_posts = []
             logger.info(f"{self.board}, Crawling，crawling_page: {crawling_page}...")
@@ -104,8 +107,10 @@ class PttCrawler:
             if not soup:
                 break
 
+            # 取得每篇文章的 a_tag
             post_a_tags = []
             for tag in soup.select("div.r-list-container > div"):
+                # r-list-sep => 截掉首頁幾篇排在後面的熱門文章(無時序且會與其他頁重複)
                 if "r-list-sep" in tag.get("class", []):
                     break
                 if "r-ent" in tag.get("class", []):
@@ -116,11 +121,14 @@ class PttCrawler:
             if not post_a_tags:
                 break
 
-            for a_tag in post_a_tags:
+            # 每篇文章的爬取 => parse_article()
+            # reversed(post_a_tags) => 確保新爬到舊
+            for a_tag in reversed(post_a_tags):
                 try:
                     post = self.parse_article(a_tag)
                     if post:
                         if self.is_latest_post(post):
+                            # 爬到前次爬取的最新文章後結束爬取
                             found_latest_post = True
                             break
                         page_posts.append(post)
@@ -130,10 +138,12 @@ class PttCrawler:
                     continue
 
             logger.info(f"{self.board}, crawling_page: {crawling_page} Finish.")
-            crawling_page = ""  # 迴圈終止預設條件
+            crawling_page = ""  # 結束此頁面的爬取後，清空crawling_page(同時為迴圈終止的條件之一)
 
             if len(page_posts) > 0:
+                # 舊到新
                 page_posts.sort(key=lambda p: p.created_at)
+                # 若包含舊於 cutoff_date 的文章則停止爬取，並篩掉文章
                 if page_posts[0].created_at < self.cutoff_date:
                     page_posts = [p for p in page_posts if p.created_at >= self.cutoff_date]
                     all_posts.extend(page_posts)

@@ -87,7 +87,7 @@
         if (mode === "next") {
             page += 1;
         } else if (mode === "prev") {
-            page = Math.max(page - 1, 0);
+            page = Math.max(page - 1, 1);
         }
 
         page_input.value = page;

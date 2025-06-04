@@ -6,12 +6,10 @@ import bs4
 import requests
 from bs4 import BeautifulSoup
 
-from db.crud import get_existing_user_map, get_or_create_user, get_or_create_post, get_existing_comment_set, \
+from db.crud import get_existing_user_map, get_or_create_user, get_or_create_post, get_existing_comments_keys_list, \
     create_comments_bulk
 from model.ptt_content import Post, Comment
 from schema.ptt_content import PostCrawl, CommentCrawl
-
-# ToDo: Test method
 
 logging.basicConfig(
     level=logging.INFO,
@@ -184,8 +182,8 @@ class PttCrawler:
     def save_comments_bulk(self, comments_inputs: List[CommentCrawl], post_id: int):
         try:
             new_comments = []
-            existing_comment_set = get_existing_comment_set(self.db, post_id)
-            seen_comments = set(existing_comment_set)
+            existing_comment_keys = get_existing_comments_keys_list(self.db, post_id)
+            seen_comments = set(existing_comment_keys)
 
             for comment in comments_inputs:
                 comment_key = (comment.user, comment.content, comment.created_at)

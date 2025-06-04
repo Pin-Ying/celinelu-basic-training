@@ -1,12 +1,8 @@
-from unittest import mock
-from unittest.mock import MagicMock
-from datetime import datetime, timedelta
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 
-import pytest
 from bs4 import BeautifulSoup
 
-from model.ptt_content import User
-from schema.ptt_content import PostCrawl, CommentCrawl
 from tasks.ptt_crawl import PttCrawler
 
 # 模擬文章 HTML
@@ -38,7 +34,7 @@ INDEX_HTML_1 = """
     <div class="r-ent">
         <div class="nrec"><span class="hl f3">26</span></div>
         <div class="title">
-            <a href="/bbs/Lifeismoney/M.1747883553.A.825.html">[情報] Test post 1</a>
+            <a href="/bbs/test_board/M.1747883553.A.825.html">[情報] Test post 1</a>
         </div>
         <div class="meta">
             <div class="author">testuser1</div>
@@ -55,7 +51,7 @@ INDEX_HTML_1 = """
     </div>
 </div>
 <div class="btn-group btn-group-paging">
-    <a class="btn wide" href="/bbs/Lifeismoney/index4002.html">&lsaquo; 上頁</a>
+    <a class="btn wide" href="/bbs/test_board/index4002.html">&lsaquo; 上頁</a>
 </div>
 """
 
@@ -64,7 +60,7 @@ INDEX_HTML_2 = """
     <div class="r-ent">
         <div class="nrec"><span class="hl f3">26</span></div>
         <div class="title">
-            <a href="/bbs/Lifeismoney/M.1747722995.A.90E.html">[情報] Test post 2</a>
+            <a href="/bbs/test_board/M.1747722995.A.90E.html">[情報] Test post 2</a>
         </div>
         <div class="meta">
             <div class="author">testuser2</div>
@@ -83,41 +79,12 @@ INDEX_HTML_2 = """
 """
 
 
-@pytest.fixture
-def dummy_postcrawl():
-    return PostCrawl(
-        title="test_post_crawl",
-        content="test_content",
-        created_at=datetime.now(),
-        board_id=1,
-        author="test_user",
-        comments=[
-            CommentCrawl(user="comment_user", content="test_comment_content", created_at=datetime.now().isoformat())
-        ]
-    )
-
-
-@pytest.fixture
-def db():
-    db = MagicMock()
-    db.query().all.return_value = {}
-    return MagicMock()
-
-
-@pytest.fixture
-def dummy_model_user():
-    return User(
-        id=1,
-        name="test_user"
-    )
-
-
-def test_parse_article_from_inline_html():
-    crawler = PttCrawler(db, board="Lifeismoney", board_id=1)
+def test_parse_article_from_inline_html(db, dummy_model_board):
+    crawler = PttCrawler(db, dummy_model_board.name, dummy_model_board.id)
     crawler.get_soup = MagicMock(return_value=BeautifulSoup(ARTICLE_HTML, "html.parser"))
 
     a_tag = MagicMock()
-    a_tag.get.return_value = "/bbs/Lifeismoney/1234.html"
+    a_tag.get.return_value = "/bbs/test_board/1234.html"
 
     post = crawler.parse_article(a_tag)
 
@@ -128,8 +95,8 @@ def test_parse_article_from_inline_html():
     assert len(post.comments) == 2
 
 
-def test_crawl_with_inline_html():
-    crawler = PttCrawler(db, 'Lifeismoney', 5, datetime(2024, 5, 2))
+def test_crawl_with_inline_html(db, dummy_model_board):
+    crawler = PttCrawler(db, dummy_model_board.name, dummy_model_board.id)
 
     def mock_get_soup(url):
         if url.endswith("index.html"):
@@ -150,3 +117,47 @@ def test_crawl_with_inline_html():
         assert post.title == "Test Title"
         assert post.created_at == datetime.strptime("Fri May 23 12:00:00 2025", "%a %b %d %H:%M:%S %Y")
 
+
+@patch("tasks.ptt_crawl.get_or_create_user")
+@patch("tasks.ptt_crawl.get_or_create_post")
+def test_save_single_post(
+        mock_get_post,
+        mock_get_user,
+        db, dummy_model_board, dummy_postcrawl, dummy_model_user, dummy_model_post
+):
+    mock_get_user.return_value = dummy_model_user
+    mock_get_post.return_value = dummy_model_post
+
+    crawler = PttCrawler(db, dummy_model_board.name, dummy_model_board.id)
+    post = crawler.save_single_post(dummy_postcrawl)
+
+    assert post == dummy_model_post
+
+
+@patch("tasks.ptt_crawl.create_comments_bulk")
+@patch("tasks.ptt_crawl.get_or_create_user")
+@patch("tasks.ptt_crawl.get_existing_comments_keys_list")
+def test_save_comments_bulk(
+        mock_get_comment_keys,
+        mock_get_user,
+        mock_create_comments_bulk,
+        db, dummy_model_board, dummy_commentcrawl, dummy_model_comment, dummy_model_post, dummy_model_user
+):
+    mock_get_comment_keys.return_value = []
+    mock_get_user.return_value = dummy_model_user
+    mock_create_comments_bulk.return_value = [dummy_model_comment]
+
+    crawler = PttCrawler(db, dummy_model_board.name, dummy_model_board.id)
+    comments = crawler.save_comments_bulk([dummy_commentcrawl], dummy_model_post.id)
+
+    assert comments == [dummy_model_comment]
+
+
+def test_save_post_from_postcrawls(db, dummy_model_board, dummy_postcrawl, dummy_model_post, dummy_model_comment):
+    crawler = PttCrawler(db, dummy_model_board.name, dummy_model_board.id)
+    crawler.save_single_post = MagicMock(return_value=dummy_model_post)
+    crawler.save_comments_bulk = MagicMock(return_value=[dummy_model_comment])
+    post_finish = crawler.save_posts_from_postcrawls([dummy_postcrawl])
+
+    assert crawler.save_comments_bulk.called
+    assert post_finish == [dummy_model_post]

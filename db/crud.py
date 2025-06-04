@@ -33,7 +33,6 @@ def get_or_create_user(db: Session, username: str) -> type[User] | None | User:
         raise e
 
 
-# ToDo : test method
 def get_existing_user_map(db: Session):
     existing_users = db.query(User).all()
     return {u.name: u for u in existing_users}
@@ -158,7 +157,7 @@ def get_or_create_comment(db: Session, comment_input: Comment):
         raise e
 
 
-def get_existing_comment_set(db: Session, post_id: int) -> List:
+def get_existing_comments_keys_list(db: Session, post_id: int) -> List:
     comments = (
         db.query(Comment)
         .filter_by(post_id=post_id)

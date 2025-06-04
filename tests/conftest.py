@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from model.ptt_content import User, Post, Comment, Board
-from schema.ptt_content import PostCrawl, CommentCrawl, PostSchema, BoardSchema, UserSchema, CommentSchema
+from schema.ptt_content import PostCrawl, CommentCrawl, PostSchema, BoardSchema, UserSchema, CommentSchema, PostSearch
 
 
 @pytest.fixture
@@ -17,6 +17,7 @@ def db():
     return db
 
 
+# --- pydantic schema ---
 @pytest.fixture
 def dummy_postschema(dummy_commentschema):
     return PostSchema(
@@ -60,6 +61,17 @@ def dummy_commentcrawl():
     )
 
 
+@pytest.fixture
+def dummy_postsearch():
+    return PostSearch(
+        author=UserSchema(name="test_author"),
+        board=BoardSchema(name="test_board"),
+        start_datetime=datetime(2025,5,1),
+        end_datetime=datetime(2025,5,31)
+    )
+
+
+# --- sqlalchemy model ---
 @pytest.fixture
 def dummy_model_user():
     return User(

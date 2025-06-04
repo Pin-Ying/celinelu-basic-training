@@ -8,7 +8,6 @@ from model.ptt_content import User, Post, Comment, Board, Log
 from schema.ptt_content import PostSearch, PostSchema
 
 
-# ToDo: check, 這裡的程式碼被大幅度修改，要確認有沒有受到影響的程式碼(test method)
 def create_default():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
@@ -43,40 +42,6 @@ def get_latest_post(db: Session, board: int):
     return db.query(Post).filter_by(board_id=board).order_by(Post.created_at.desc()).first()
 
 
-def get_query_by_search_dic(db: Session, post_search: PostSearch):
-    query = db.query(Post).options(
-        joinedload(Post.author),
-        joinedload(Post.board)
-    )
-    filters = []
-    if post_search.author:
-        query = query.join(Post.author)
-        filters.append(User.name == post_search.author.name)
-
-    if post_search.board:
-        query = query.join(Post.board)
-        filters.append(Board.name == post_search.board.name)
-
-    if post_search.start_datetime:
-        filters.append(Post.created_at >= post_search.start_datetime)
-
-    if post_search.end_datetime:
-        filters.append(Post.created_at <= post_search.end_datetime)
-
-    return query.filter(*filters).order_by(Post.created_at.desc())
-
-
-def get_posts_by_search_dic(db: Session, search_filter, posts_limit=50, posts_offset=0):
-    return get_query_by_search_dic(db, search_filter).offset(posts_offset).limit(posts_limit).all()
-
-
-def get_post_detail_by_id(db: Session, post_id: int):
-    post_input = db.query(Post).filter_by(id=post_id)
-    post_input = post_input.options(joinedload(Post.comments)).first()
-    return post_input
-
-
-# ToDo: test method
 def get_or_create_post(db: Session, post_input: Post):
     post = db.query(Post).filter_by(
         title=post_input.title,
@@ -136,8 +101,43 @@ def delete_post_from_id(db: Session, post_id):
         raise e
 
 
+def get_query_by_post_search(db: Session, post_search: PostSearch):
+    query = db.query(Post).options(
+        joinedload(Post.author),
+        joinedload(Post.board)
+    )
+    filters = []
+    if post_search.author:
+        query = query.join(Post.author)
+        filters.append(User.name == post_search.author.name)
+
+    if post_search.board:
+        query = query.join(Post.board)
+        filters.append(Board.name == post_search.board.name)
+
+    if post_search.start_datetime:
+        filters.append(Post.created_at >= post_search.start_datetime)
+
+    if post_search.end_datetime:
+        filters.append(Post.created_at <= post_search.end_datetime)
+
+    return query.filter(*filters).order_by(Post.created_at.desc())
+
+
+def get_posts(db: Session, post_search: PostSearch, posts_limit=50, posts_offset=0):
+    post_query = get_query_by_post_search(db, post_search)
+    if post_query:
+        return post_query.offset(posts_offset).limit(posts_limit).all()
+    return None
+
+
+def get_post_detail_by_id(db: Session, post_id: int):
+    post_input = db.query(Post).filter_by(id=post_id)
+    post_input = post_input.options(joinedload(Post.comments)).first()
+    return post_input
+
+
 # --- Comment ---
-# ToDo: test method
 def get_or_create_comment(db: Session, comment_input: Comment):
     comment = db.query(Comment).filter_by(
         post_id=comment_input.post_id,
@@ -166,7 +166,6 @@ def get_existing_comments_keys_list(db: Session, post_id: int) -> List:
     )
     if comments:
         return [(comment.user.name, comment.content, comment.created_at) for comment in comments]
-
     return []
 
 

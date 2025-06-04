@@ -6,7 +6,7 @@ from fastapi import APIRouter, FastAPI, Depends, Form, Body
 from sqlalchemy.exc import SQLAlchemyError
 
 from db.crud import update_post_from_id, delete_post_from_id, \
-    get_query_by_search_dic, get_post_detail_by_id, get_posts_by_search_dic, get_or_create_board, get_or_create_user, \
+    get_query_by_post_search, get_post_detail_by_id, get_posts, get_or_create_board, get_or_create_user, \
     get_or_create_post
 from db.database import SessionLocal
 from model.ptt_content import Post
@@ -108,7 +108,7 @@ async def get_posts(search_filter: PostSearch = Depends(post_search_query),
                     page=1):
     try:
         offset = (int(page) - 1) * int(limit)
-        all_posts = get_posts_by_search_dic(db, search_filter, limit, offset)
+        all_posts = get_posts(db, search_filter, limit, offset)
         post_schema_list = [post_schema_sqlalchemy_to_pydantic(p) for p in all_posts]
         return DataResponse(result="Success", data=post_schema_list)
     except Exception as e:
@@ -143,7 +143,7 @@ async def get_post(db=Depends(get_db), post_id=None):
 async def get_statistics(search_filter: PostSearch = Depends(post_search_query),
                          db=Depends(get_db)):
     try:
-        query = get_query_by_search_dic(db, search_filter)
+        query = get_query_by_post_search(db, search_filter)
 
         # 統計符合條件的文章總數
         total_count = query.count()

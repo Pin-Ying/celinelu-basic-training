@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import List
 
 from sqlalchemy.orm import Session, joinedload
@@ -121,10 +122,16 @@ def delete_post_from_id(db: Session, post_id):
     if target_post is None:
         return None
     try:
+        post_copy = Post(
+            id=post_id,
+            title=target_post.title,
+            content=target_post.content,
+            author=target_post.author,
+            board=target_post.board,
+            created_at=target_post.created_at)
         db.delete(target_post)
         db.commit()
-        db.refresh(target_post)
-        return target_post
+        return post_copy
     except Exception as e:
         db.rollback()
         raise e

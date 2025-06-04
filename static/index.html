@@ -98,22 +98,6 @@
         document.getElementById("show-one-post").style.display = "none";
     }
 
-    function formDataToJson(formData) {
-        const jsonObject = {};
-        formData.forEach((value, key) => {
-            // 若有重複 key，處理為陣列（可選）
-            if (jsonObject[key]) {
-                if (!Array.isArray(jsonObject[key])) {
-                    jsonObject[key] = [jsonObject[key]];
-                }
-                jsonObject[key].push(value);
-            } else {
-                jsonObject[key] = value;
-            }
-        });
-        return jsonObject;
-    }
-
     function createPostForm(post, container) {
         // console.log(post);
         let row = document.createElement('div');
@@ -142,7 +126,7 @@
         fetch('/posts/' + post_id, {method: 'GET'})
             .then(res => res.json())
             .then(result => {
-                if (result.result === "success") {
+                if (result.result === "Success") {
                     let post = result.data;
                     console.log(post);
                     let container = document.querySelector("#show-one-post");
@@ -226,8 +210,8 @@
             .then(res => res.json())
             .then(data => {
                 let container = document.querySelector("#statistics-data");
-                container.innerHTML = `<div>總計：${data["result_count"]}篇文章</div>`;
-                page_input.max = parseInt(parseInt(data["result_count"]) / limit) + 1;
+                container.innerHTML = `<div>總計：${data["data"]["total_count"]}篇文章</div>`;
+                page_input.max = parseInt(parseInt(data["data"]["total_count"]) / limit) + 1;
             })
             .catch(err => console.error(err));
     }
@@ -235,16 +219,29 @@
     function addPost() {
         let form = document.querySelector("#add-post-form");
         let formData = new FormData(form);
-        let jsonData = formDataToJson(formData);
+
+        let jsonData = {
+            title: formData.get("title"),
+            content: formData.get("content"),
+            author: {
+                name: formData.get("author_name")
+            },
+            board: {
+                name: formData.get("board_name")
+            }
+        };
 
         fetch(`/posts`, {
             method: 'POST',
-            body: {"data":jsonData}
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(jsonData)
         })
             .then(res => res.json())
             .then(data => {
                 console.log(data);
-                if (data["result"] === "success") {
+                if (data["result"] === "Success") {
                     reload();
                 }
 
@@ -256,13 +253,28 @@
         let form = document.querySelector("#update-post-" + post_id);
         let formData = new FormData(form);
 
+        let jsonData = {
+            title: formData.get("title"),
+            content: formData.get("content"),
+            created_at: formData.get("created_at"),
+            author: {
+                name: formData.get("author_name")
+            },
+            board: {
+                name: formData.get("board_name")
+            }
+        };
+
         fetch(`/posts/${post_id}`, {
             method: 'PUT',
-            body: formData
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(jsonData)
         })
             .then(res => res.json())
             .then(data => {
-                if (data["result"] === "success") {
+                if (data["result"] === "Success") {
                     // console.log(data);
                     reload();
                 }
@@ -276,7 +288,7 @@
         })
             .then(res => res.json())
             .then(data => {
-                if (data["result"] === "success") {
+                if (data["result"] === "Success") {
                     // console.log(data);
                     reload();
                 }

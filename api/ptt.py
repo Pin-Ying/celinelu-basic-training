@@ -10,8 +10,8 @@ from db.crud import update_post_from_id, delete_post_from_id, \
     get_or_create_post
 from db.database import SessionLocal
 from model.ptt_content import Post
-from schema.ptt_content import PostSchema, PostSearch, UserSchema, BoardSchema, PostSchemaResponse, StatisticsResponse, \
-    PostDetailSchema, CommentSchema
+from schema.ptt_content import PostSchema, PostSearch, UserSchema, BoardSchema, DataResponse, StatisticsResponse, \
+    PostDetailSchema, CommentSchema, StatisticsData
 
 app = FastAPI()
 router = APIRouter()
@@ -94,99 +94,95 @@ def handle_create_post(db, post_schema: PostSchema):
 
         post_schema.id = post_created.id
         post_schema.created_at = post_created.created_at
-        return PostSchemaResponse(result="success", data=post_schema)
+        return DataResponse(result="Success", data=post_schema)
     except Exception as e:
-        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
+        return DataResponse(result=f"error,{e}", data=post_schema)
 
 
 # --- GET ---
-@router.get("/api/posts", response_model=PostSchemaResponse,
+@router.get("/api/posts", response_model=DataResponse,
             response_model_exclude={"data": {"__all__": {"comments"}}})
 async def get_posts(search_filter: PostSearch = Depends(post_search_query),
                     db=Depends(get_db),
                     limit=50,
                     page=1):
-    offset = (int(page) - 1) * int(limit)
-    all_posts = get_posts_by_search_dic(db, search_filter, limit, offset)
-    post_schema_list = [post_schema_sqlalchemy_to_pydantic(p) for p in all_posts]
-    return PostSchemaResponse(result="success", data=post_schema_list)
+    try:
+        offset = (int(page) - 1) * int(limit)
+        all_posts = get_posts_by_search_dic(db, search_filter, limit, offset)
+        post_schema_list = [post_schema_sqlalchemy_to_pydantic(p) for p in all_posts]
+        return DataResponse(result="Success", data=post_schema_list)
+    except Exception as e:
+        return DataResponse(result=f"error,{e}")
 
 
-@router.get("/api/posts/{post_id}", response_model=PostSchemaResponse)
+@router.get("/api/posts/{post_id}", response_model=DataResponse)
 async def get_post(db=Depends(get_db), post_id=None):
-    post_input = get_post_detail_by_id(db, post_id)
-    if post_input is None:
-        return PostSchemaResponse(result="PostNotFound")
-    post_schema = PostDetailSchema(
-        id=post_input.id,
-        title=post_input.title,
-        content=post_input.content,
-        created_at=post_input.created_at,
-        board=BoardSchema(name=post_input.board.name),
-        author=UserSchema(name=post_input.author.name),
-        comments=[
-            CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.created_at)
-            for c in post_input.comments
-            if post_input.comments is not None
-        ]
-    )
-    return PostSchemaResponse(result="success", data=post_schema)
+    try:
+        post_input = get_post_detail_by_id(db, post_id)
+        if post_input is None:
+            return DataResponse(result="PostNotFound")
+        post_schema = PostDetailSchema(
+            id=post_input.id,
+            title=post_input.title,
+            content=post_input.content,
+            created_at=post_input.created_at,
+            board=BoardSchema(name=post_input.board.name),
+            author=UserSchema(name=post_input.author.name),
+            comments=[
+                CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.created_at)
+                for c in post_input.comments
+                if post_input.comments is not None
+            ]
+        )
+        return DataResponse(result="Success", data=post_schema)
+    except Exception as e:
+        return DataResponse(result=f"error,{e}")
 
 
 @router.get("/api/statistics", response_model=StatisticsResponse)
 async def get_statistics(search_filter: PostSearch = Depends(post_search_query),
                          db=Depends(get_db)):
-    query = get_query_by_search_dic(db, search_filter)
+    try:
+        query = get_query_by_search_dic(db, search_filter)
 
-    # 統計符合條件的文章總數
-    total_count = query.count()
-    return StatisticsResponse(result="success", search_filter=search_filter, result_count=total_count)
+        # 統計符合條件的文章總數
+        total_count = query.count()
+        return StatisticsResponse(result="Success",
+                                  data=StatisticsData(search_filter=search_filter, total_count=total_count))
+    except Exception as e:
+        return StatisticsResponse(result=f"error,{e}")
 
 
 # --- POST ---
-@router.post("/api/posts", response_model=PostSchemaResponse)
+@router.post("/api/posts", response_model=DataResponse)
 async def add_post(post_add: PostSchema = Body(...), db=Depends(get_db)):
-    return handle_create_post(db, post_add)
-
-
-@router.post("/api/posts/form")
-async def create_post_from_form(
-        post_schema: PostSchema = Depends(form_to_postschema), db=Depends(get_db)):
-    return handle_create_post(db, post_schema)
+    try:
+        return handle_create_post(db, post_add)
+    except Exception as e:
+        return DataResponse(result=f"error,{e}")
 
 
 # --- PUT ---
-@router.put("/api/posts/{post_id}", response_model=PostSchemaResponse)
+@router.put("/api/posts/{post_id}", response_model=DataResponse)
 async def update_post(post_id: int, db=Depends(get_db), post_update: PostSchema = Body(...)):
     try:
         target_post = update_post_from_id(db, post_id, post_update)
         if target_post is None:
-            return PostSchemaResponse(result="PostNotFound")
+            return DataResponse(result="PostNotFound")
         post_update.id = target_post.id
-        return PostSchemaResponse(result="success", data=post_update)
+        return DataResponse(result="Success", data=post_update)
     except Exception as e:
-        return PostSchemaResponse(result=f"error,{e}", data=post_update)
-
-@router.put("/api/posts/form/{post_id}", response_model=PostSchemaResponse)
-async def update_post_from_form(post_id, db=Depends(get_db), post_update: PostSchema = Depends(form_to_postschema)):
-    try:
-        target_post = update_post_from_id(db, post_id, post_update)
-        if target_post is None:
-            return PostSchemaResponse(result="PostNotFound")
-        post_update.id = target_post.id
-        return PostSchemaResponse(result="success", data=post_update)
-    except Exception as e:
-        return PostSchemaResponse(result=f"error,{e}", data=post_update)
+        return DataResponse(result=f"error,{e}", data=post_update)
 
 
 # --- DELETE ---
-@router.delete("/api/posts/{post_id}", response_model=PostSchemaResponse)
+@router.delete("/api/posts/{post_id}", response_model=DataResponse)
 async def delete_post(post_id, db=Depends(get_db)):
     try:
         target_post = delete_post_from_id(db, post_id)
         if target_post is None:
-            return PostSchemaResponse(result="PostNotFound")
+            return DataResponse(result="PostNotFound")
         post_schema = post_schema_sqlalchemy_to_pydantic(target_post)
-        return PostSchemaResponse(result="success", data=post_schema)
+        return DataResponse(result="Success", data=post_schema)
     except Exception as e:
-        return PostSchemaResponse(result=f"error,{e}", data=post_schema)
+        return DataResponse(result=f"error,{e}")

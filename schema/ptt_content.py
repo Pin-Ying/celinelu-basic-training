@@ -20,7 +20,7 @@ class PostCrawl(BaseModel):
     author: str
     board_id: int
     created_at: datetime
-    comments: List[CommentCrawl]
+    comments: Optional[List[CommentCrawl]]
 
     class Config:
         orm_mode = True
@@ -28,14 +28,14 @@ class PostCrawl(BaseModel):
 
 # --- API ---
 class UserSchema(BaseModel):
-    name: str
+    name: Optional[str] = None
 
     class Config:
         orm_mode = True
 
 
 class BoardSchema(BaseModel):
-    name: str
+    name: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -76,14 +76,18 @@ class PostSearch(BaseModel):
         orm_mode = True
 
 
-class PostSchemaResponse(BaseModel):
-    result: str = ''
+class DataResponse(BaseModel):
+    result: str = 'None'
     data: Optional[Union[PostSchema, PostDetailSchema, List[PostSchema]]] = None
 
     class Config:
         orm_mode = True
 
 
-class StatisticsResponse(PostSchemaResponse):
-    search_filter: Optional[PostSearch]
-    result_count: int
+class StatisticsData(BaseModel):
+    search_filter: Optional[PostSearch] = None
+    total_count: int
+
+
+class StatisticsResponse(DataResponse):
+    data: Optional[StatisticsData] = None

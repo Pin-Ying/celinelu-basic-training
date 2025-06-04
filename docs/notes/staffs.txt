@@ -42,7 +42,7 @@ ALTER TABLE posts CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 curl => 在命令列（terminal）使用的工具，主要用來跟網路上的伺服器交換資料，支援 HTTP、HTTPS、FTP 等多種協議。
 
 curl -X GET http://localhost:8000/api/posts?author_name=test_author
-curl -X GET http://localhost:8000/api/posts/69258
+curl -X GET http://localhost:8000/api/posts/58426
 curl -X GET http://localhost:8000/api/statistics?board_name=NBA
 
 
@@ -51,22 +51,12 @@ curl -X POST http://localhost:8000/api/posts ^
 -d "{\"title\": \"test_title\", \"content\": \"test\", \"author\": {\"name\": \"test_author\"}, \"board\": {\"name\": \"home-sale\"}}"
 
 
-curl -X POST http://localhost:8000/api/posts/form ^
--H "Content-Type: application/x-www-form-urlencoded" ^
--d "title=test_title&author_name=test_author&content=test&board_name=home-sale"
-
-
-curl -X PUT http://localhost:8000/api/posts/69316 ^
+curl -X PUT http://localhost:8000/api/posts/58426 ^
 -H "Content-Type: application/json" ^
 -d "{\"title\": \"test_title\", \"content\": \"test2.0\", \"author\": {\"name\": \"test_author\"}, \"board\": {\"name\": \"home-sale\"}}"
 
 
-curl -X PUT http://localhost:8000/api/posts/form/69316 ^
--H "Content-Type: application/x-www-form-urlencoded" ^
--d "title=test_title&author_name=test_author&content=test3.0&board_name=home-sale"
-
-
-curl -X DELETE http://localhost:8000/api/posts/69316
+curl -X DELETE http://localhost:8000/api/posts/58459
 
 ---
 apt-get => Debian 和 Ubuntu 等 Linux 發行版上，管理軟體套件的指令行工具，Advanced Packaging Tool（APT）

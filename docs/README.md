@@ -33,9 +33,9 @@
   > ![frontEnd-design.png](img/frontEnd-design.png)
   
 - 運作流程圖
-  > ![運作流程圖.png](drawio-pic/%E9%81%8B%E4%BD%9C%E6%B5%81%E7%A8%8B%E5%9C%96.png)
+  > ![Flow.png](drawio-pic/Flow.png)
 - 規劃時程表
-  > ![工作拆分與時程規劃-時間軸.png](img/%E5%B7%A5%E4%BD%9C%E6%8B%86%E5%88%86%E8%88%87%E6%99%82%E7%A8%8B%E8%A6%8F%E5%8A%83-%E6%99%82%E9%96%93%E8%BB%B8.png)
+  > ![schedule.png](img/schedule.png)
 
 - 環境需求
   - 資料庫種類：mariadb

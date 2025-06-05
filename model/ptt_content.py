@@ -14,7 +14,7 @@ datetime_now = lambda: datetime.now(tz)
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(255), unique=True, primary_key=True, nullable=False)
+    name = Column(String(255), unique=True, nullable=False)
     posts = relationship('Post', back_populates='author')
     comments = relationship('Comment', back_populates='user')
 

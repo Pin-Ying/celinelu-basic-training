@@ -5,7 +5,7 @@ from sqlalchemy.orm import InstrumentedAttribute
 from db.crud import (
     get_or_create_user,
     update_post_from_id, delete_post_from_id, get_or_create_board,
-    get_all_boards, get_existing_user_map, get_or_create_post, get_query_by_post_search, get_posts,
+    get_all_boards, get_existing_user_map, get_or_create_post, get_query_by_post_search, get_posts_by_search,
     get_or_create_comment, get_existing_comments_keys_list
 )
 
@@ -76,12 +76,12 @@ def test_get_query_by_post_search(db, dummy_postsearch):
     query.order_by.assert_called_once()
 
 
-def test_get_posts(db, dummy_postsearch, dummy_model_post):
+def test_get_posts_by_search(db, dummy_postsearch, dummy_model_post):
     with patch("db.crud.get_query_by_post_search") as mock_get_query_by_post_search:
         query = MagicMock()
         mock_get_query_by_post_search.return_value = query
         query.offset().limit().all.return_value = [dummy_model_post]
-        posts = get_posts(db, dummy_postsearch)
+        posts = get_posts_by_search(db, dummy_postsearch)
         assert posts == [dummy_model_post]
 
 

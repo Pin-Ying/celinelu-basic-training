@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="ptt@localhost" uuid="794dbf53-962d-4a4a-a5a3-ad6bee90dba2">
+    <data-source source="LOCAL" name="ptt_db@localhost" uuid="794dbf53-962d-4a4a-a5a3-ad6bee90dba2">
       <driver-ref>mariadb</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.mariadb.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mariadb://localhost:3306/ptt</jdbc-url>
+      <jdbc-url>jdbc:mariadb://localhost:3306/ptt_db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import List
 
 from sqlalchemy.orm import Session, joinedload
@@ -124,7 +123,7 @@ def get_query_by_post_search(db: Session, post_search: PostSearch):
     return query.filter(*filters).order_by(Post.created_at.desc())
 
 
-def get_posts(db: Session, post_search: PostSearch, posts_limit=50, posts_offset=0):
+def get_posts_by_search(db: Session, post_search: PostSearch, posts_limit=50, posts_offset=0):
     post_query = get_query_by_post_search(db, post_search)
     if post_query:
         return post_query.offset(posts_offset).limit(posts_limit).all()

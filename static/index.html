@@ -69,6 +69,8 @@
 </body>
 
 <script>
+    const api_url = "http://localhost:8000/api";
+
     function reload(msg = "完成！") {
         alert(msg);
         location.reload();
@@ -123,7 +125,7 @@
     }
 
     function getOnePostData(post_id) {
-        fetch('/posts/' + post_id, {method: 'GET'})
+        fetch(api_url + '/posts/' + post_id, {method: 'GET'})
             .then(res => res.json())
             .then(result => {
                 if (result.result === "Success") {
@@ -178,11 +180,11 @@
             }
         }
 
-        fetch(`/posts?${query.toString()}`, {method: 'GET'})
+        fetch(api_url + `/posts?${query.toString()}`, {method: 'GET'})
             .then(res => res.json())
             .then(result => {
                 let data = result.data;
-                console.log(`/api/posts?${query.toString()}`)
+                console.log(data)
                 let container = document.querySelector("#show-data");
                 container.innerHTML = '';
                 data.forEach(post => {
@@ -206,7 +208,7 @@
             }
         }
 
-        fetch(`/statistics?${query.toString()}`, {method: 'GET'})
+        fetch(api_url + `/statistics?${query.toString()}`, {method: 'GET'})
             .then(res => res.json())
             .then(data => {
                 let container = document.querySelector("#statistics-data");
@@ -231,7 +233,7 @@
             }
         };
 
-        fetch(`/posts`, {
+        fetch(api_url + `/posts`, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json"
@@ -265,7 +267,7 @@
             }
         };
 
-        fetch(`/posts/${post_id}`, {
+        fetch(api_url + `/posts/${post_id}`, {
             method: 'PUT',
             headers: {
                 "Content-Type": "application/json"
@@ -283,7 +285,7 @@
     }
 
     function deletePost(post_id) {
-        fetch(`/posts/${post_id}`, {
+        fetch(api_url + `/posts/${post_id}`, {
             method: 'DELETE'
         })
             .then(res => res.json())

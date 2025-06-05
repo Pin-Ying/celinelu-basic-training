@@ -29,10 +29,12 @@
 <div>條件篩文章</div>
 <form id="post-filter" onchange="flipPage(); getStatistics();">
     <div class="grid grid-cols-4">
-        <input type="text" name="author_name" placeholder="發文者"/>
-        <input type="text" name="board_name" placeholder="版面"/>
-        <input type="date" name="start_datetime" placeholder="開始時間"/>
-        <input type="date" name="end_datetime" placeholder="結束時間"/>
+        <input type="text" name="author_name" placeholder="發文者" style="grid-column: span 2;"/>
+        <input type="text" name="board_name" placeholder="版面" style="grid-column: span 2;"/>
+        <label for="page">開始時間：</label>
+        <input type="datetime-local" name="start_datetime" placeholder="開始時間"/>
+        <label for="page">結束時間：</label>
+        <input type="datetime-local" name="end_datetime" placeholder="結束時間"/>
 
         <label for="page">頁數：</label>
         <input type="number" id="page" name="page" value="1" min="1"/>
@@ -69,7 +71,7 @@
 </body>
 
 <script>
-    const api_url = "http://localhost:8000/api";
+    const api_url = "http://localhost:8000";
 
     function reload(msg = "完成！") {
         alert(msg);
@@ -130,7 +132,7 @@
             .then(result => {
                 if (result.result === "Success") {
                     let post = result.data;
-                    console.log(post);
+                    // console.log(post);
                     let container = document.querySelector("#show-one-post");
                     container.style.display = 'block';
                     container.innerHTML = `
@@ -184,7 +186,7 @@
             .then(res => res.json())
             .then(result => {
                 let data = result.data;
-                console.log(data)
+                // console.log(data)
                 let container = document.querySelector("#show-data");
                 container.innerHTML = '';
                 data.forEach(post => {
@@ -242,9 +244,11 @@
         })
             .then(res => res.json())
             .then(data => {
-                console.log(data);
+                // console.log(data);
                 if (data["result"] === "Success") {
-                    reload();
+                    reload("新增成功！");
+                } else {
+                    alert(data["result"]);
                 }
 
             })
@@ -278,7 +282,9 @@
             .then(data => {
                 if (data["result"] === "Success") {
                     // console.log(data);
-                    reload();
+                    reload("修改成功！");
+                } else {
+                    alert(data["result"]);
                 }
             })
             .catch(err => console.error(err));
@@ -292,13 +298,18 @@
             .then(data => {
                 if (data["result"] === "Success") {
                     // console.log(data);
-                    reload();
+                    reload("已刪除");
+                } else {
+                    alert(data["result"]);
                 }
             })
             .catch(err => console.error(err));
     }
 
-    getPostData();
-    getStatistics();
+    document.addEventListener("DOMContentLoaded", function () {
+        getPostData();
+        getStatistics();
+    });
+
 </script>
 </html>

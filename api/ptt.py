@@ -38,7 +38,7 @@ def empty_str_to_none(s: str):
     return None
 
 
-def post_search_query(
+def created_post_search(
         author_name: Optional[str] = "",
         board_name: Optional[str] = "",
         start_datetime: Optional[str] = "",
@@ -60,22 +60,6 @@ def post_schema_sqlalchemy_to_pydantic(post_input: Post) -> PostSchema:
         created_at=post_input.created_at,
         board=BoardSchema(name=post_input.board.name) if post_input.board else None,
         author=UserSchema(name=post_input.author.name) if post_input.author else None
-    )
-
-
-def form_to_postschema(
-        title: str = Form(...),
-        content: str = Form(...),
-        author_name: str = Form(...),
-        board_name: str = Form(...),
-        created_at: Optional[datetime] = Form(None)
-):
-    return PostSchema(
-        title=title,
-        content=content,
-        author=UserSchema(name=author_name) if author_name else None,
-        board=BoardSchema(name=board_name) if board_name else None,
-        created_at=created_at if created_at else datetime.now(tz)
     )
 
 
@@ -102,7 +86,7 @@ def handle_create_post(db, post_schema: PostSchema):
 # --- GET ---
 @router.get("/api/posts", response_model=DataResponse,
             response_model_exclude={"data": {"__all__": {"comments"}}})
-async def get_posts(search_filter: PostSearch = Depends(post_search_query),
+async def get_posts(search_filter: PostSearch = Depends(created_post_search),
                     db=Depends(get_db),
                     limit=50,
                     page=1):
@@ -140,7 +124,7 @@ async def get_post(db=Depends(get_db), post_id=None):
 
 
 @router.get("/api/statistics", response_model=StatisticsResponse)
-async def get_statistics(search_filter: PostSearch = Depends(post_search_query),
+async def get_statistics(search_filter: PostSearch = Depends(created_post_search),
                          db=Depends(get_db)):
     try:
         query = get_query_by_post_search(db, search_filter)

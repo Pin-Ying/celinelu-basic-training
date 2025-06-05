@@ -97,6 +97,7 @@ def test_parse_article_from_inline_html(db, dummy_model_board):
 
 def test_crawl_with_inline_html(db, dummy_model_board):
     crawler = PttCrawler(db, dummy_model_board.name, dummy_model_board.id)
+    # crawler.cutoff_date = datetime(2025, 5, 1)
 
     def mock_get_soup(url):
         if url.endswith("index.html"):

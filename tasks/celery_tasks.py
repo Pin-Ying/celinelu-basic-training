@@ -45,6 +45,7 @@ def crawl_single_board_task(task_id, board: str, board_id: int):
     except Exception as e:
         log_crawl_result(db,task_id, f"[{board}]: Error! {e}", "ERROR")
         logger.error(f"[{board}]: Error! {e}")
+        raise e
     finally:
         db.close()
 
@@ -66,11 +67,11 @@ def crawl_all_boards():
     db = SessionLocal()
     task_id = "task-" + datetime.now().strftime("%Y%m%d%H%M%S")
     log_crawl_result(db, task_id, f"Task Started!")
-    ALL_BOARDS = get_all_boards(db)
+    all_boards = get_all_boards(db)
 
     try:
         full_tasks = []
-        for board, board_id in ALL_BOARDS.items():
+        for board, board_id in all_boards.items():
             full_chain = chain(
                 crawl_single_board_task.s(task_id, board, board_id),
                 tasks_log.s(task_id, f"[{board}]: Finished.", show_result=True)

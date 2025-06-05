@@ -32,8 +32,8 @@ class Post(Base):
     title = Column(String(255), nullable=False)
     content = Column(LONGTEXT)
     created_at = Column(DateTime, default=datetime_now)
-    author_id = Column(Integer, ForeignKey('users.id'))
-    board_id = Column(Integer, ForeignKey('boards.id'))
+    author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    board_id = Column(Integer, ForeignKey('boards.id'), nullable=False)
 
     author = relationship('User', back_populates='posts')
     board = relationship('Board', back_populates='posts')
@@ -49,8 +49,8 @@ class Comment(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     content = Column(Text)
     created_at = Column(Text)
-    post_id = Column(Integer, ForeignKey('posts.id'))
-    user_id = Column(Integer, ForeignKey('users.id'))
+    post_id = Column(Integer, ForeignKey('posts.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
     post = relationship('Post', back_populates='comments')
     user = relationship('User', back_populates='comments')
@@ -63,7 +63,7 @@ class Comment(Base):
 class Log(Base):
     __tablename__ = "logs"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    task_id = Column(Text)
+    task_id = Column(Text, nullable=False)
     level = Column(String(10))
     message = Column(Text)
     created_at = Column(DateTime, default=datetime_now)

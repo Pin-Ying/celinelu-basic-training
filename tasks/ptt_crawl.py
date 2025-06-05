@@ -20,14 +20,15 @@ logger = logging.getLogger("ptt_crawler")
 
 class PttCrawler:
     BASE_URL = "https://www.ptt.cc"
+    cutoff_date = datetime.now() - timedelta(days=365)
 
-    def __init__(self, db, board: str, board_id: int, latest_post: Post = None,
-                 cutoff_date=datetime.now() - timedelta(days=365)):
+    def __init__(self, db, board: str, board_id: int, latest_post: Post = None):
         self.db = db
         self.board = board
         self.board_id = board_id
         self.latest_post = latest_post
-        self.cutoff_date = latest_post.created_at if latest_post else cutoff_date
+        if latest_post:
+            self.cutoff_date = latest_post.created_at
         self.session = requests.Session()
         self.session.cookies.set("over18", "1")
         self.user_map = get_existing_user_map(self.db)

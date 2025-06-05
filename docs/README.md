@@ -46,15 +46,17 @@
 
 #### 專案呈現
 
-- 爬蟲
-  - PttCrawler 類別
-    - 抓取每一個 board 的方法皆相同
-    - 抓取每一文章列表的方法皆相同
-    - 抓取每篇文章的方法皆相同
+- Tasks (爬蟲與排程)
+  - PttCrawler 類別 => 進行某個 Board 的文章爬取與資料庫儲存
+    - crawl() => 爬取文章列表 -> 收集文章列表得到的文章a標籤，依序爬取單篇文章 -> 將爬取的文章收集，並從上頁按鈕進行下一頁的爬取 
+      - 結束爬取條件：1.當單篇文章與前次最新的文章相同(前次終斷點)、2.批次抓取的文章中包含日期比 cutoff_date 舊的文章(沒有斷點文章時)
+    - save_posts_from_postcrawls() => 將收集的文章存入資料庫
 
   - Celery
     - Broker: Redis
-    -
+    - celery beat => 設定每小時一次的 "crawl-ptt-every-hour" schedule
+    - crawl_all_boards() => 追蹤與整合不同 Borad 的爬取任務，並紀錄(log)任務開始、結束時間
+  
   - log
   > ![celery-log.png](img/celery-log.png)
 
@@ -64,6 +66,7 @@
   > ![ptt-web-frontend.png](img/ptt-web-frontend.png)
   > ![ptt-web-frontend-2.png](img/ptt-web-frontend-2.png)
 - 部屬
-  - WebServer: Uvicorn
-  - 
-- 
+  - Dockerfile
+    - 使用 Poetry 建立環境
+    - CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] => FastAPI
+

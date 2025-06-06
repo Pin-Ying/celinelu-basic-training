@@ -77,8 +77,7 @@ class PostSearch(BaseModel):
 
 
 class DataResponse(BaseModel):
-    result: str = 'None'
-    data: Optional[Union[PostSchema, PostDetailSchema, List[PostSchema]]] = None
+    detail: Optional[Union[PostSchema, PostDetailSchema, List[PostSchema]]] = None
 
     class Config:
         orm_mode = True

@@ -2,7 +2,9 @@ from datetime import datetime
 from typing import Optional
 
 import pytz
-from fastapi import APIRouter, FastAPI, Depends, Form, Body
+from fastapi import APIRouter, FastAPI, Depends, Body, HTTPException, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import Response, JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from db.crud import update_post_from_id, delete_post_from_id, \
@@ -44,26 +46,93 @@ def created_post_search(
         start_datetime: Optional[str] = "",
         end_datetime: Optional[str] = "",
 ) -> PostSearch:
-    return PostSearch(
-        author=UserSchema(name=author_name) if empty_str_to_none(author_name) else None,
-        board=BoardSchema(name=board_name) if empty_str_to_none(board_name) else None,
-        start_datetime=datetime.fromisoformat(start_datetime) if empty_str_to_none(start_datetime) else None,
-        end_datetime=datetime.fromisoformat(end_datetime) if empty_str_to_none(end_datetime) else None
-    )
+    try:
+        return PostSearch(
+            author=UserSchema(name=author_name) if empty_str_to_none(author_name) else None,
+            board=BoardSchema(name=board_name) if empty_str_to_none(board_name) else None,
+            start_datetime=datetime.fromisoformat(start_datetime) if empty_str_to_none(start_datetime) else None,
+            end_datetime=datetime.fromisoformat(end_datetime) if empty_str_to_none(end_datetime) else None
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise e
 
 
 def post_schema_sqlalchemy_to_pydantic(post_input: Post) -> PostSchema:
-    return PostSchema(
-        id=post_input.id,
-        title=post_input.title,
-        content=post_input.content,
-        created_at=post_input.created_at,
-        board=BoardSchema(name=post_input.board.name) if post_input.board else None,
-        author=UserSchema(name=post_input.author.name) if post_input.author else None
-    )
+    try:
+        return PostSchema(
+            id=post_input.id,
+            title=post_input.title,
+            content=post_input.content,
+            created_at=post_input.created_at,
+            board=BoardSchema(name=post_input.board.name) if post_input.board else None,
+            author=UserSchema(name=post_input.author.name) if post_input.author else None
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise e
 
 
-def handle_create_post(db, post_schema: PostSchema):
+# --- GET ---
+@router.get("/api/posts")
+async def get_posts(search_filter: PostSearch = Depends(created_post_search),
+                    db=Depends(get_db),
+                    limit=50,
+                    page=1):
+    try:
+        offset = (int(page) - 1) * int(limit)
+        all_posts = get_posts_by_search(db, search_filter, limit, offset)
+        post_schema_list = [post_schema_sqlalchemy_to_pydantic(p) for p in all_posts]
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"data": jsonable_encoder(post_schema_list)})
+
+    except Exception as e:
+        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get("/api/posts/{post_id}")
+async def get_post(db=Depends(get_db), post_id=None):
+    try:
+        post_input = get_post_detail_by_id(db, post_id)
+        if post_input is None:
+            return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PostNotFound")
+        post_schema = PostDetailSchema(
+            id=post_input.id,
+            title=post_input.title,
+            content=post_input.content,
+            created_at=post_input.created_at,
+            board=BoardSchema(name=post_input.board.name),
+            author=UserSchema(name=post_input.author.name),
+            comments=[
+                CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.created_at)
+                for c in post_input.comments
+                if post_input.comments is not None
+            ]
+        )
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"data": jsonable_encoder(post_schema)})
+    except Exception as e:
+        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get("/api/statistics")
+async def get_statistics(search_filter: PostSearch = Depends(created_post_search),
+                         db=Depends(get_db)):
+    try:
+        query = get_query_by_post_search(db, search_filter)
+
+        # 統計符合條件的文章總數
+        total_count = query.count()
+        data = StatisticsData(search_filter=search_filter, total_count=total_count)
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"data": jsonable_encoder(data)})
+
+    except Exception as e:
+        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+# --- POST ---
+@router.post("/api/posts")
+async def add_post(post_schema: PostSchema = Body(...), db=Depends(get_db)):
     try:
         author = get_or_create_user(db, post_schema.author.name)
         board = get_or_create_board(db, post_schema.board.name)
@@ -78,95 +147,32 @@ def handle_create_post(db, post_schema: PostSchema):
 
         post_schema.id = post_created.id
         post_schema.created_at = post_created.created_at
-        return DataResponse(result="Success", data=post_schema)
+        return Response(status_code=status.HTTP_201_CREATED)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
-        return DataResponse(result=f"error,{e}", data=post_schema)
-
-
-# --- GET ---
-@router.get("/api/posts", response_model=DataResponse,
-            response_model_exclude={"data": {"__all__": {"comments"}}})
-async def get_posts(search_filter: PostSearch = Depends(created_post_search),
-                    db=Depends(get_db),
-                    limit=50,
-                    page=1):
-    try:
-        offset = (int(page) - 1) * int(limit)
-        all_posts = get_posts_by_search(db, search_filter, limit, offset)
-        post_schema_list = [post_schema_sqlalchemy_to_pydantic(p) for p in all_posts]
-        return DataResponse(result="Success", data=post_schema_list)
-    except Exception as e:
-        return DataResponse(result=f"error,{e}")
-
-
-@router.get("/api/posts/{post_id}", response_model=DataResponse)
-async def get_post(db=Depends(get_db), post_id=None):
-    try:
-        post_input = get_post_detail_by_id(db, post_id)
-        if post_input is None:
-            return DataResponse(result="PostNotFound")
-        post_schema = PostDetailSchema(
-            id=post_input.id,
-            title=post_input.title,
-            content=post_input.content,
-            created_at=post_input.created_at,
-            board=BoardSchema(name=post_input.board.name),
-            author=UserSchema(name=post_input.author.name),
-            comments=[
-                CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.created_at)
-                for c in post_input.comments
-                if post_input.comments is not None
-            ]
-        )
-        return DataResponse(result="Success", data=post_schema)
-    except Exception as e:
-        return DataResponse(result=f"error,{e}")
-
-
-@router.get("/api/statistics", response_model=StatisticsResponse)
-async def get_statistics(search_filter: PostSearch = Depends(created_post_search),
-                         db=Depends(get_db)):
-    try:
-        query = get_query_by_post_search(db, search_filter)
-
-        # 統計符合條件的文章總數
-        total_count = query.count()
-        return StatisticsResponse(result="Success",
-                                  data=StatisticsData(search_filter=search_filter, total_count=total_count))
-    except Exception as e:
-        return StatisticsResponse(result=f"error,{e}")
-
-
-# --- POST ---
-@router.post("/api/posts", response_model=DataResponse)
-async def add_post(post_add: PostSchema = Body(...), db=Depends(get_db)):
-    try:
-        return handle_create_post(db, post_add)
-    except Exception as e:
-        return DataResponse(result=f"error,{e}")
+        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 # --- PUT ---
-@router.put("/api/posts/{post_id}", response_model=DataResponse)
+@router.put("/api/posts/{post_id}")
 async def update_post(post_id: int, db=Depends(get_db), post_update: PostSchema = Body(...)):
     try:
         target_post = update_post_from_id(db, post_id, post_update)
         if target_post is None:
-            return DataResponse(result="PostNotFound")
-        post_update.id = target_post.id
-        return DataResponse(result="Success", data=post_update)
+            return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PostNotFound")
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
-        return DataResponse(result=f"error,{e}", data=post_update)
+        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 # --- DELETE ---
-@router.delete("/api/posts/{post_id}", response_model=DataResponse)
+@router.delete("/api/posts/{post_id}")
 async def delete_post(post_id, db=Depends(get_db)):
     try:
         target_post = delete_post_from_id(db, post_id)
         if target_post is None:
-            return DataResponse(result="PostNotFound")
-        post_schema = post_schema_sqlalchemy_to_pydantic(target_post)
-        return DataResponse(result="Success", data=post_schema)
+            return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PostNotFound")
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
-        return DataResponse(result=f"error,{e}")
+        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

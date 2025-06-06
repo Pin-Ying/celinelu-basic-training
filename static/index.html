@@ -71,11 +71,30 @@
 </body>
 
 <script>
-    const api_url = "http://localhost:8000";
+    const api_url = "http://localhost:8000/api";
 
     function reload(msg = "完成！") {
         alert(msg);
         location.reload();
+    }
+
+    function checkStatusCode(res) {
+        if (!res.ok) {
+            if (res.status >= 400 && res.status < 500) {
+                console.warn("Client-side error:", res.status);
+                alert("請檢查輸入的內容是否正確");
+            }
+            res.text().then(text => console.log("Error response:", text));
+            return;
+        }
+
+        if (res.status === 204 || res.status === 201) {
+            // 204 No Content 不需要解析
+            return;
+        }
+
+        // 其他情況正常解析 JSON
+        return res.json();
     }
 
     function flipPage(mode) {
@@ -126,11 +145,13 @@
         container.appendChild(row);
     }
 
+
+    // 呼叫API取得指定ID的詳細文章內文
     function getOnePostData(post_id) {
         fetch(api_url + '/posts/' + post_id, {method: 'GET'})
-            .then(res => res.json())
+            .then(res => checkStatusCode(res))
             .then(result => {
-                if (result.result === "Success") {
+                if (result.data) {
                     let post = result.data;
                     // console.log(post);
                     let container = document.querySelector("#show-one-post");
@@ -171,6 +192,8 @@
             .catch(err => console.error(err));
     }
 
+
+    // 呼叫API取得篩選文章列表
     function getPostData() {
         let form = document.querySelector("#post-filter");
         let formData = new FormData(form);
@@ -183,7 +206,7 @@
         }
 
         fetch(api_url + `/posts?${query.toString()}`, {method: 'GET'})
-            .then(res => res.json())
+            .then(res => checkStatusCode(res))
             .then(result => {
                 let data = result.data;
                 // console.log(data)
@@ -196,6 +219,8 @@
             .catch(err => console.error(err));
     }
 
+
+    // 呼叫API取得篩選文章的統計資料
     function getStatistics() {
         let form = document.querySelector("#post-filter");
         let formData = new FormData(form);
@@ -211,8 +236,9 @@
         }
 
         fetch(api_url + `/statistics?${query.toString()}`, {method: 'GET'})
-            .then(res => res.json())
+            .then(res => checkStatusCode(res))
             .then(data => {
+                // console.log(data);
                 let container = document.querySelector("#statistics-data");
                 container.innerHTML = `<div>總計：${data["data"]["total_count"]}篇文章</div>`;
                 page_input.max = parseInt(parseInt(data["data"]["total_count"]) / limit) + 1;
@@ -220,6 +246,8 @@
             .catch(err => console.error(err));
     }
 
+
+    // 呼叫API新增文章
     function addPost() {
         let form = document.querySelector("#add-post-form");
         let formData = new FormData(form);
@@ -242,19 +270,16 @@
             },
             body: JSON.stringify(jsonData)
         })
-            .then(res => res.json())
+            .then(res => checkStatusCode(res))
             .then(data => {
                 // console.log(data);
-                if (data["result"] === "Success") {
-                    reload("新增成功！");
-                } else {
-                    alert(data["result"]);
-                }
-
+                reload("新增成功！");
             })
             .catch(err => console.error(err));
     }
 
+
+    // 呼叫API更改指定ID的文章
     function updatePost(post_id) {
         let form = document.querySelector("#update-post-" + post_id);
         let formData = new FormData(form);
@@ -278,30 +303,24 @@
             },
             body: JSON.stringify(jsonData)
         })
-            .then(res => res.json())
+            .then(res => checkStatusCode(res))
             .then(data => {
-                if (data["result"] === "Success") {
-                    // console.log(data);
-                    reload("修改成功！");
-                } else {
-                    alert(data["result"]);
-                }
+                // console.log(data);
+                reload("修改成功！");
             })
             .catch(err => console.error(err));
     }
 
+
+    // 呼叫API刪除指定ID的文章
     function deletePost(post_id) {
         fetch(api_url + `/posts/${post_id}`, {
             method: 'DELETE'
         })
-            .then(res => res.json())
+            .then(res => checkStatusCode(res))
             .then(data => {
-                if (data["result"] === "Success") {
-                    // console.log(data);
-                    reload("已刪除");
-                } else {
-                    alert(data["result"]);
-                }
+                // console.log(data);
+                reload("已刪除");
             })
             .catch(err => console.error(err));
     }

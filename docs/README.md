@@ -68,5 +68,9 @@
 - 部屬
   - Dockerfile
     - 使用 Poetry 建立環境
-    - CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] => FastAPI
+    - redis: celery broker、celery result backend
+    - mariadb: database
+    - web: web server(FastAPI + uvicorn)
+    - celery_worker: run tasks
+    - celery_beat: schedule tasks
 

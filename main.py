@@ -11,7 +11,11 @@ from fastapi.staticfiles import StaticFiles
 
 from api import ptt
 
-app = FastAPI()
+app = FastAPI(
+    title="PTT WebServer",
+    description="這是一個查詢與修改PTT文章資料庫的API",
+    version="1.0.0"
+)
 app.include_router(ptt.router)
 tz = pytz.timezone("Asia/Taipei")
 
@@ -19,10 +23,9 @@ static_dir = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
-@app.get("/")
+@app.get("/", tags=["Index"])
 def read_index():
     return FileResponse("static/index.html")
-
 
 # # 模擬 呼叫第三方API
 # load_dotenv()

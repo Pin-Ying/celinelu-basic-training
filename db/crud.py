@@ -127,7 +127,7 @@ def get_posts_by_search(db: Session, post_search: PostSearch, posts_limit=50, po
     post_query = get_query_by_post_search(db, post_search)
     if post_query:
         return post_query.offset(posts_offset).limit(posts_limit).all()
-    return None
+    return []
 
 
 def get_post_detail_by_id(db: Session, post_id: int):

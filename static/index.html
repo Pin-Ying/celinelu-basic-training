@@ -89,7 +89,7 @@
         }
 
         if (res.status === 204 || res.status === 201) {
-            // 204 No Content 不需要解析
+            //No Content 不需要解析
             return;
         }
 
@@ -146,7 +146,7 @@
     }
 
 
-    // 呼叫API取得指定ID的詳細文章內文
+    // 呼叫API取得指定ID的詳細文章資料
     function getOnePostData(post_id) {
         fetch(api_url + '/posts/' + post_id, {method: 'GET'})
             .then(res => checkStatusCode(res))

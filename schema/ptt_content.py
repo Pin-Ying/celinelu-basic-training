@@ -76,17 +76,13 @@ class PostSearch(BaseModel):
         orm_mode = True
 
 
-class DataResponse(BaseModel):
-    detail: Optional[Union[PostSchema, PostDetailSchema, List[PostSchema]]] = None
-
-    class Config:
-        orm_mode = True
-
-
 class StatisticsData(BaseModel):
     search_filter: Optional[PostSearch] = None
     total_count: int
 
 
-class StatisticsResponse(DataResponse):
-    data: Optional[StatisticsData] = None
+class DataResponse(BaseModel):
+    data: Optional[Union[PostSchema, PostDetailSchema, List[PostSchema], StatisticsData]] = None
+
+    class Config:
+        orm_mode = True

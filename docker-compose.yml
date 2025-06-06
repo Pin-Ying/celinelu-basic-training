@@ -38,6 +38,8 @@ services:
 
   celery_worker:
     build: .
+    env_file:
+      - .env
     container_name: celery_worker
     depends_on:
       - redis

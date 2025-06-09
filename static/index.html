@@ -83,6 +83,7 @@
             if (res.status >= 400 && res.status < 500) {
                 console.warn("Client-side error:", res.status);
                 alert("請檢查輸入的內容是否正確");
+                return;
             }
             res.text().then(text => console.log("Error response:", text));
             return;

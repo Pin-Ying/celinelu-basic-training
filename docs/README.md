@@ -68,6 +68,8 @@
 - 部屬
   - Dockerfile
     - 使用 Poetry 建立環境
+
+  - docker-compose.yml
     - redis: celery broker、celery result backend
     - mariadb: database
     - web: web server(FastAPI + uvicorn)

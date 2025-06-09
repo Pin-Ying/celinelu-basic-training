@@ -93,6 +93,8 @@ class PttCrawler:
             print(f"[ParseError] {url} -> {e}")
             return None
 
+    # def parse_article_list(self):
+
     def crawl(self) -> List[PostCrawl]:
         crawling_page = "index.html"
         all_posts = []
@@ -137,7 +139,6 @@ class PttCrawler:
                     continue
 
             logger.info(f"{self.board}, crawling_page: {crawling_page} Finish.")
-            crawling_page = ""  # 結束此頁面的爬取後，清空crawling_page(同時為迴圈終止的條件之一)
 
             if len(page_posts) > 0:
                 # 舊到新

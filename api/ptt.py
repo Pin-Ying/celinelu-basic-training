@@ -132,8 +132,7 @@ async def get_statistics(search_filter: PostSearch = Depends(created_post_search
 
 
 # --- POST ---
-@router.post("/posts", summary="新增文章", status_code=201,
-             responses={201: {"description": "成功新增"}})
+@router.post("/posts", summary="新增文章")
 async def add_post(post_schema: PostSchema = Body(...), db=Depends(get_db)):
     try:
         author = get_or_create_user(db, post_schema.author.name)
@@ -146,7 +145,9 @@ async def add_post(post_schema: PostSchema = Body(...), db=Depends(get_db)):
             author_id=author.id
         )
         post_created = get_or_create_post(db, new_post)
-        return Response(status_code=status.HTTP_201_CREATED)
+        post_schema.id = post_created.id
+        post_schema.created_at = post_created.created_at
+        return DataResponse(data=post_schema)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
@@ -154,14 +155,13 @@ async def add_post(post_schema: PostSchema = Body(...), db=Depends(get_db)):
 
 
 # --- PUT ---
-@router.put("/posts/{post_id}", summary="修改指定ID的文章", status_code=204,
-            responses={204: {"description": "成功修改"}})
+@router.put("/posts/{post_id}", summary="修改指定ID的文章")
 async def update_post(post_id: int, db=Depends(get_db), post_update: PostSchema = Body(...)):
     try:
         target_post = update_post_from_id(db, post_id, post_update)
         if target_post is None:
             return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PostNotFound")
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        return DataResponse(data=post_update)
     except Exception as e:
         return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 

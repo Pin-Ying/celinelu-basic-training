@@ -28,14 +28,14 @@ class PostCrawl(BaseModel):
 
 # --- API ---
 class UserSchema(BaseModel):
-    name: Optional[str] = None
+    name: str
 
     class Config:
         orm_mode = True
 
 
 class BoardSchema(BaseModel):
-    name: Optional[str] = None
+    name: str
 
     class Config:
         orm_mode = True

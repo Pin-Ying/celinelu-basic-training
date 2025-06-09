@@ -27,5 +27,8 @@ RUN poetry install --no-root
 # 複製當前目錄的所有檔案到容器的 /app
 COPY . .
 
+# 移除 Poetry
+RUN rm -rf /root/.local /usr/local/bin/poetry
+
 # 預設容器啟動時執行的指令
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

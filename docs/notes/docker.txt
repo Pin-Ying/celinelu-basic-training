@@ -50,3 +50,7 @@ docker exec -it <container_name> bash => 進入指定的容器
 
 Dockerfile => APP 運行的環境
 docker-compose.yml => 組成該APP的各項服務
+
+# 將 image 丟到 dockerhub
+docker tag local-image:tagname new-repo:tagname
+docker push new-repo:tagname

@@ -93,71 +93,55 @@ class PttCrawler:
             print(f"[ParseError] {url} -> {e}")
             return None
 
-    # def parse_article_list(self):
-
-    def crawl(self) -> List[PostCrawl]:
-        crawling_page = "index.html"
+    def crawl_all_articles(self) -> List[PostCrawl]:
+        crawling_article_list = "index.html"
         all_posts = []
-        found_latest_post = False
+        found_cutoff_post = False
 
-        # 爬取文章列表 => crawling_page 為正在爬取的頁面
-        while crawling_page != '':
-            page_posts = []
-            logger.info(f"{self.board}, Crawling，crawling_page: {crawling_page}...")
-            soup = self.get_soup(f"{self.BASE_URL}/bbs/{self.board}/{crawling_page}")
-            if not soup:
+        # 爬取文章列表 => crawling_article_list 為正在爬取的文章列表
+        while crawling_article_list and not found_cutoff_post:
+            logger.info(f"{self.board}, Crawling，crawling_article_list: {crawling_article_list}...")
+            article_list_soup = self.get_soup(f"{self.BASE_URL}/bbs/{self.board}/{crawling_article_list}")
+            if not article_list_soup:
                 break
 
             # 取得每篇文章的 a_tag
-            post_a_tags = []
-            for tag in soup.select("div.r-list-container > div"):
+            article_a_tags = []
+            for tag in article_list_soup.select("div.r-list-container > div"):
                 # r-list-sep => 截掉首頁幾篇排在後面的熱門文章(無時序且會與其他頁重複)
                 if "r-list-sep" in tag.get("class", []):
                     break
                 if "r-ent" in tag.get("class", []):
                     a_tag = tag.select_one(".title > a")
                     if a_tag:
-                        post_a_tags.append(a_tag)
-
-            if not post_a_tags:
+                        article_a_tags.append(a_tag)
+            if not article_a_tags:
                 break
 
             # 每篇文章的爬取 => parse_article()
-            # reversed(post_a_tags) => 確保新爬到舊
-            for a_tag in reversed(post_a_tags):
+            # reversed(article_a_tags) => 確保文章排序新到舊(原文章列表預設新文章在下)
+            for a_tag in reversed(article_a_tags):
                 try:
                     post = self.parse_article(a_tag)
                     if post:
+                        # 爬到前次爬取的最新文章後結束爬取
                         if self.is_latest_post(post):
-                            # 爬到前次爬取的最新文章後結束爬取
-                            found_latest_post = True
+                            found_cutoff_post = True
                             break
-                        page_posts.append(post)
-
+                        # 若文章舊於 cutoff_date 則結束爬取
+                        if post.created_at and post.created_at < self.cutoff_date:
+                            found_cutoff_post = True
+                            break
+                        all_posts.append(post)
                 except Exception as e:
                     logger.error(f"Error!: {e}")
                     continue
+            logger.info(f"{self.board}, crawling_article_list: {crawling_article_list} Finish.")
 
-            logger.info(f"{self.board}, crawling_page: {crawling_page} Finish.")
-
-            if len(page_posts) > 0:
-                # 舊到新
-                page_posts.sort(key=lambda p: p.created_at)
-                # 若包含舊於 cutoff_date 的文章則停止爬取，並篩掉文章
-                if page_posts[0].created_at < self.cutoff_date:
-                    page_posts = [p for p in page_posts if p.created_at >= self.cutoff_date]
-                    all_posts.extend(page_posts)
-                    break
-                all_posts.extend(page_posts)
-
-            if found_latest_post:
-                break
-
-            prev_link = soup.select_one("div.btn-group-paging a:contains('上頁')")
+            prev_link = article_list_soup.select_one("div.btn-group-paging a:contains('上頁')")
             if not prev_link:
                 break
-            crawling_page = prev_link["href"].split("/")[-1]
-
+            crawling_article_list = prev_link["href"].split("/")[-1]
         return all_posts
 
     # --- save data to db ---

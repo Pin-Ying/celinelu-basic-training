@@ -37,7 +37,7 @@ def crawl_single_board_task(task_id, board: str, board_id: int):
 
         # 爬取
         crawler = PttCrawler(db, board, board_id, latest_post=latest_post) if latest_post else PttCrawler(db, board, board_id)
-        posts = crawler.crawl()
+        posts = crawler.crawl_all_articles()
 
         # 存入
         post_finish = crawler.save_posts_from_postcrawls(posts)

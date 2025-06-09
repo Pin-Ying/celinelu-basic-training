@@ -97,7 +97,7 @@ def test_parse_article_from_inline_html(db, dummy_model_board):
 
 def test_crawl_with_inline_html(db, dummy_model_board):
     crawler = PttCrawler(db, dummy_model_board.name, dummy_model_board.id)
-    # crawler.cutoff_date = datetime(2025, 5, 1)
+    crawler.cutoff_date = datetime(2025, 5, 22)
 
     def mock_get_soup(url):
         if url.endswith("index.html"):
@@ -110,7 +110,7 @@ def test_crawl_with_inline_html(db, dummy_model_board):
 
     crawler.get_soup = mock_get_soup
 
-    posts = crawler.crawl()
+    posts = crawler.crawl_all_articles()
 
     assert len(posts) == 2
     for post in posts:

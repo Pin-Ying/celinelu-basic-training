@@ -212,7 +212,3 @@ def create_log_result(db: Session, task_id: str, message: str, level: str = "INF
     log = Log(task_id=task_id, message=message, level=level)
     db.add(log)
     db.commit()
-
-
-if __name__ == "__main__":
-    create_default()

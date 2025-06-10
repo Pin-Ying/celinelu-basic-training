@@ -10,6 +10,8 @@ from db.database import Base
 tz = pytz.timezone("Asia/Taipei")
 datetime_now = lambda: datetime.now(tz)
 
+# ToDo: Comment 改欄位了!!!
+
 
 class User(Base):
     __tablename__ = 'users'

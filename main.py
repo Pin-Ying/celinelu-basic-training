@@ -10,7 +10,10 @@ from fastapi.staticfiles import StaticFiles
 # from starlette.responses import JSONResponse
 
 from api import ptt
+from dotenv import load_dotenv
 
+load_dotenv()
+PTT_API_URL = os.getenv("PTT_API_URL")
 app = FastAPI(
     title="PTT WebServer",
     description="這是一個查詢與修改PTT文章資料庫的API",
@@ -26,6 +29,11 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 @app.get("/", tags=["Index"])
 def read_index():
     return FileResponse("static/index.html")
+
+
+@app.get("/api_url")
+def ptt_api_url():
+    return {"url": PTT_API_URL}
 
 # # 模擬 呼叫第三方API
 # load_dotenv()

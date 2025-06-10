@@ -41,7 +41,7 @@ ALTER TABLE posts CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 測試API
 curl => 在命令列（terminal）使用的工具，主要用來跟網路上的伺服器交換資料，支援 HTTP、HTTPS、FTP 等多種協議。
 
-curl -X GET http://localhost:8000/api/posts?author_name=test_author
+curl -X GET http://localhost:8000/api/posts?start_datetime=2025-06-03T17
 curl -X GET http://localhost:8000/api/posts/58426
 curl -X GET http://localhost:8000/api/statistics?board_name=NBA
 

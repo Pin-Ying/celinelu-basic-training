@@ -3,3 +3,4 @@
 *.drawio.bkp
 *.db
 *.coverage
+/docs/drawio-pic/.$ptt-crawl.drawio.dtmp

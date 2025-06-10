@@ -151,6 +151,7 @@ class PttCrawler:
             author = self.user_map.get(post_input.author) if self.user_map else None
             if author is None:
                 author = get_or_create_user(self.db, post_input.author)
+                self.user_map[author.name] = author
             new_post = Post(
                 title=post_input.title,
                 content=post_input.content,
@@ -168,6 +169,7 @@ class PttCrawler:
     def save_comments_bulk(self, comments_inputs: List[CommentCrawl], post_id: int):
         try:
             new_comments = []
+            # 該文章已經存在的留言
             existing_comment_keys = get_existing_comments_keys_list(self.db, post_id)
             seen_comments = set(existing_comment_keys)
 
@@ -180,7 +182,7 @@ class PttCrawler:
                 comment_user = self.user_map.get(comment.user) if self.user_map else None
                 if comment_user is None:
                     comment_user = get_or_create_user(self.db, comment.user)
-                self.user_map[comment.user] = comment_user
+                self.user_map[comment_user.name] = comment_user
 
                 new_comment = Comment(
                     post_id=post_id,
@@ -200,6 +202,7 @@ class PttCrawler:
     def save_posts_from_postcrawls(self, post_inputs: List[PostCrawl]):
         try:
             post_finish = []
+            post_exception_msgs = []
             for post_input in post_inputs:
                 try:
                     # 將文章先加入資料庫
@@ -210,11 +213,13 @@ class PttCrawler:
                         post_finish.append(post_result)
                         self.save_comments_bulk(post_input.comments, post_result.id)
                 except Exception as e:
+                    # 存下遇到的錯誤，繼續存取其他文章
                     self.db.rollback()
+                    post_exception_msgs.append(e)
                     logger.error(f"Error!: {e}")
                     continue
 
-            return post_finish
+            return post_finish, post_exception_msgs
         except Exception as e:
             self.db.rollback()
             raise e

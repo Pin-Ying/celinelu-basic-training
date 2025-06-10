@@ -40,7 +40,10 @@ def crawl_single_board_task(task_id, board: str, board_id: int):
         posts = crawler.crawl_all_articles()
 
         # 存入
-        post_finish = crawler.save_posts_from_postcrawls(posts)
+        post_finish, post_exception_msgs = crawler.save_posts_from_postcrawls(posts)
+        if len(post_exception_msgs) > 0:
+            for msg in post_exception_msgs:
+                log_crawl_result(db,f"[{board}]: Error! {msg}", "ERROR")
         return f"saved {len(post_finish)} posts"
     except Exception as e:
         log_crawl_result(db,task_id, f"[{board}]: Error! {e}", "ERROR")

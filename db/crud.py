@@ -172,7 +172,6 @@ def create_comments_bulk(db: Session, comments: List[Comment]):
     try:
         db.add_all(comments)
         db.commit()
-        db.refresh(comments)
         return comments
     except Exception as e:
         db.rollback()

@@ -158,7 +158,7 @@ def test_save_post_from_postcrawls(db, dummy_model_board, dummy_postcrawl, dummy
     crawler = PttCrawler(db, dummy_model_board.name, dummy_model_board.id)
     crawler.save_single_post = MagicMock(return_value=dummy_model_post)
     crawler.save_comments_bulk = MagicMock(return_value=[dummy_model_comment])
-    post_finish = crawler.save_posts_from_postcrawls([dummy_postcrawl])
+    post_finish, post_exceptions = crawler.save_posts_from_postcrawls([dummy_postcrawl])
 
     assert crawler.save_comments_bulk.called
     assert post_finish == [dummy_model_post]

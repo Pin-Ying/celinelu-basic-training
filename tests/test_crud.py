@@ -103,7 +103,7 @@ def test_get_or_create_comment_existing(db, dummy_model_comment):
 def test_get_existing_comments_keys_list(db, dummy_model_comment, dummy_model_post):
     db.query().filter_by().options().all.return_value = [dummy_model_comment]
     comments = get_existing_comments_keys_list(db, dummy_model_post.id)
-    assert comments == [(dummy_model_comment.user.name, dummy_model_comment.content, dummy_model_comment.created_at)]
+    assert comments == [(dummy_model_comment.user.name, dummy_model_comment.content, dummy_model_comment.comment_created_time)]
 
 
 # -------- Tests for Board --------

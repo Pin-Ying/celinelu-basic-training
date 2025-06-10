@@ -36,7 +36,7 @@ def dummy_commentschema():
     return CommentSchema(
         user=UserSchema(name="comment_user"),
         content="test_comment_content",
-        created_at=datetime.now().isoformat()
+        comment_created_time=datetime.now().isoformat()
     )
 
 
@@ -57,7 +57,7 @@ def dummy_commentcrawl():
     return CommentCrawl(
         user="comment_user",
         content="test_comment_content",
-        created_at=datetime.now().isoformat()
+        comment_created_time=datetime.now().isoformat()
     )
 
 
@@ -106,6 +106,6 @@ def dummy_model_comment(dummy_model_user):
     return Comment(
         id=1,
         content="test_comment_content",
-        created_at="2025-05-27T15:30:00",
+        comment_created_time="2025-05-27T15:30:00",
         user=dummy_model_user
     )

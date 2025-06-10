@@ -105,7 +105,7 @@ async def get_post(db=Depends(get_db), post_id=None):
             board=BoardSchema(name=post_input.board.name),
             author=UserSchema(name=post_input.author.name),
             comments=[
-                CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.post_created_time)
+                CommentSchema(user=UserSchema(name=c.user.name), content=c.content, comment_created_time=c.comment_created_time)
                 for c in post_input.comments
                 if post_input.comments is not None
             ]

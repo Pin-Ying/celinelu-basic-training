@@ -8,7 +8,7 @@ from pydantic import BaseModel
 class CommentCrawl(BaseModel):
     user: str
     content: str
-    created_at: str
+    comment_created_time: str
 
     class Config:
         orm_mode = True
@@ -44,7 +44,7 @@ class BoardSchema(BaseModel):
 class CommentSchema(BaseModel):
     user: Optional['UserSchema'] = None
     content: Optional[str] = None
-    created_at: Optional[str] = None
+    comment_created_time: Optional[str] = None
 
     class Config:
         orm_mode = True

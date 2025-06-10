@@ -32,6 +32,7 @@ class Post(Base):
     title = Column(String(255), nullable=False)
     content = Column(LONGTEXT)
     post_created_time = Column(DateTime)
+    created_at = Column(DateTime, default=datetime_now)
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     board_id = Column(Integer, ForeignKey('boards.id'), nullable=False)
 

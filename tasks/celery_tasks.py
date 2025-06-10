@@ -6,7 +6,7 @@ from celery import Celery, chain, group
 from celery.schedules import crontab
 from dotenv import load_dotenv
 
-from db.crud import log_crawl_result, get_latest_post, get_all_boards
+from db.crud import create_log_result, get_latest_post, get_all_boards
 from db.database import SessionLocal
 from tasks.ptt_crawl import PttCrawler
 
@@ -43,10 +43,10 @@ def crawl_single_board_task(task_id, board: str, board_id: int):
         post_finish, post_exception_msgs = crawler.save_posts_from_postcrawls(posts)
         if len(post_exception_msgs) > 0:
             for msg in post_exception_msgs:
-                log_crawl_result(db,f"[{board}]: Error! {msg}", "ERROR")
+                create_log_result(db, f"[{board}]: Error! {msg}", "ERROR")
         return f"saved {len(post_finish)} posts"
     except Exception as e:
-        log_crawl_result(db,task_id, f"[{board}]: Error! {e}", "ERROR")
+        create_log_result(db, task_id, f"[{board}]: Error! {e}", "ERROR")
         logger.error(f"[{board}]: Error! {e}")
         raise e
     finally:
@@ -59,7 +59,7 @@ def tasks_log(result, task_id, msg="Task Finish!", show_result=False):
     try:
         if result and show_result:
             msg += f"Result: {result}."
-        log_crawl_result(db, task_id, msg)
+        create_log_result(db, task_id, msg)
         return msg
     finally:
         db.close()
@@ -69,7 +69,7 @@ def tasks_log(result, task_id, msg="Task Finish!", show_result=False):
 def crawl_all_boards():
     db = SessionLocal()
     task_id = "task-" + datetime.now().strftime("%Y%m%d%H%M%S")
-    log_crawl_result(db, task_id, f"Task Started!")
+    create_log_result(db, task_id, "Task Started!")
     all_boards = get_all_boards(db)
 
     try:
@@ -86,7 +86,7 @@ def crawl_all_boards():
             tasks_log.s(task_id, "All Boards Finished! Task Finish.")
         ).apply_async()
     except Exception as e:
-        log_crawl_result(db, task_id, f"Error： {e}", "ERROR")
+        create_log_result(db, task_id, f"Error： {e}", "ERROR")
         logger.error(f"Error： {e}")
     finally:
         db.close()

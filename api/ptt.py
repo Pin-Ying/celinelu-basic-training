@@ -132,7 +132,8 @@ async def get_statistics(search_filter: PostSearch = Depends(created_post_search
 
 
 # --- POST ---
-@router.post("/posts", summary="新增文章")
+@router.post("/posts", summary="新增文章",
+             responses={200: {"model": DataResponse, "description": "成功"}})
 async def add_post(post_schema: PostSchema = Body(...), db=Depends(get_db)):
     try:
         author = get_or_create_user(db, post_schema.author.name)
@@ -155,7 +156,8 @@ async def add_post(post_schema: PostSchema = Body(...), db=Depends(get_db)):
 
 
 # --- PUT ---
-@router.put("/posts/{post_id}", summary="修改指定ID的文章")
+@router.put("/posts/{post_id}", summary="修改指定ID的文章",
+            responses={200: {"model": DataResponse, "description": "成功"}})
 async def update_post(post_id: int, db=Depends(get_db), post_update: PostSchema = Body(...)):
     try:
         target_post = update_post_from_id(db, post_id, post_update)

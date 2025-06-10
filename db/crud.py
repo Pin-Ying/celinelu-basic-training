@@ -208,7 +208,7 @@ def seed_boards(db: Session, board_dic: dict):
 
 
 # --- Log ---
-def log_crawl_result(db: Session, task_id: str, message: str, level: str = "INFO"):
+def create_log_result(db: Session, task_id: str, message: str, level: str = "INFO"):
     log = Log(task_id=task_id, message=message, level=level)
     db.add(log)
     db.commit()

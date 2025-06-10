@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from db.crud import get_latest_post, log_crawl_result
+from db.crud import get_latest_post, create_log_result
 from db.database import SessionLocal
 from tasks.ptt_crawl import PttCrawler
 

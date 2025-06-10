@@ -37,9 +37,6 @@
   > ![Flow.png](drawio-pic/Flow.png)
 - 規劃時程表
   > ![schedule.png](img/schedule.png)
-
-- 環境需求
-  - 資料庫種類：mariadb
 - 部屬方式
   - docker-compose
 
@@ -53,7 +50,7 @@
   - Celery
     - Broker: Redis
     - celery beat => 設定每小時一次的 "crawl-ptt-every-hour" schedule
-    - crawl_all_boards() => 追蹤與整合不同 Borad 的爬取任務，並紀錄(log)任務開始、結束時間
+  > ![celery-tasks.png](drawio-pic/celery-tasks.png)
   
   - log
   > ![celery-log.png](img/celery-log.png)
@@ -64,13 +61,13 @@
   > ![ptt-web-frontend.png](img/ptt-web-frontend.png)
   > ![ptt-web-frontend-2.png](img/ptt-web-frontend-2.png)
 - 部屬
-  - Dockerfile
-    - 使用 Poetry 建立環境
-
   - docker-compose.yml
     - redis: celery broker、celery result backend
     - mariadb: database
-    - web: web server(FastAPI + uvicorn)
-    - celery_worker: run tasks
-    - celery_beat: schedule tasks
+    - images build by Dockerfile
+      - web: web server(FastAPI + uvicorn)
+      - celery_worker: run tasks
+      - celery_beat: schedule tasks
+  - Dockerfile
+    - 使用 Poetry 建立環境
 

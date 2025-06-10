@@ -63,7 +63,7 @@ def post_schema_sqlalchemy_to_pydantic(post_input: Post) -> PostSchema:
             id=post_input.id,
             title=post_input.title,
             content=post_input.content,
-            created_at=post_input.created_at,
+            post_created_time=post_input.post_created_time,
             board=BoardSchema(name=post_input.board.name) if post_input.board else None,
             author=UserSchema(name=post_input.author.name) if post_input.author else None
         )
@@ -101,11 +101,11 @@ async def get_post(db=Depends(get_db), post_id=None):
             id=post_input.id,
             title=post_input.title,
             content=post_input.content,
-            created_at=post_input.created_at,
+            post_created_time=post_input.post_created_time,
             board=BoardSchema(name=post_input.board.name),
             author=UserSchema(name=post_input.author.name),
             comments=[
-                CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.created_at)
+                CommentSchema(user=UserSchema(name=c.user.name), content=c.content, created_at=c.post_created_time)
                 for c in post_input.comments
                 if post_input.comments is not None
             ]
@@ -140,13 +140,13 @@ async def add_post(post_schema: PostSchema = Body(...), db=Depends(get_db)):
         new_post = Post(
             title=post_schema.title,
             content=post_schema.content,
-            created_at=post_schema.created_at,
+            post_created_time=post_schema.post_created_time,
             board_id=board.id,
             author_id=author.id
         )
         post_created = get_or_create_post(db, new_post)
         post_schema.id = post_created.id
-        post_schema.created_at = post_created.created_at
+        post_schema.post_created_time = post_created.post_created_time
         return DataResponse(data=post_schema)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

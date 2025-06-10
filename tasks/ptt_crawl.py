@@ -28,7 +28,7 @@ class PttCrawler:
         self.board_id = board_id
         self.latest_post = latest_post
         if latest_post:
-            self.cutoff_date = latest_post.created_at
+            self.cutoff_date = latest_post.post_created_time
         self.session = requests.Session()
         self.session.cookies.set("over18", "1")
         self.user_map = get_existing_user_map(self.db)
@@ -44,7 +44,7 @@ class PttCrawler:
 
     def is_latest_post(self, post: PostCrawl) -> bool:
         if self.latest_post:
-            if post.title == self.latest_post.title and post.created_at == self.latest_post.created_at:
+            if post.title == self.latest_post.title and post.post_created_time == self.latest_post.post_created_time:
                 return True
         return False
 
@@ -61,7 +61,7 @@ class PttCrawler:
             if len(meta_vals) == 0:
                 return None
 
-            meta_map = dict(作者="author", 標題="title", 時間="created_at")
+            meta_map = dict(作者="author", 標題="title", 時間="post_created_time")
             for tag, val in zip(metas, meta_vals):
                 key = meta_map.get(tag.text.strip())
                 if not key:
@@ -69,7 +69,7 @@ class PttCrawler:
                 val_text = val.text.strip()
                 if key == "author":
                     val_text = val_text.split()[0]
-                elif key == "created_at":
+                elif key == "post_created_time":
                     val_text = " ".join(val_text.split())
                     val_text = datetime.strptime(val_text, "%a %b %d %H:%M:%S %Y")
                 post_data[key] = val_text
@@ -129,7 +129,7 @@ class PttCrawler:
                             found_cutoff_post = True
                             break
                         # 若文章舊於 cutoff_date 則結束爬取
-                        if post.created_at and post.created_at < self.cutoff_date:
+                        if post.post_created_time and post.post_created_time < self.cutoff_date:
                             found_cutoff_post = True
                             break
                         all_posts.append(post)
@@ -155,7 +155,7 @@ class PttCrawler:
             new_post = Post(
                 title=post_input.title,
                 content=post_input.content,
-                created_at=post_input.created_at,
+                post_created_time=post_input.post_created_time,
                 board_id=post_input.board_id,
                 author_id=author.id
             )

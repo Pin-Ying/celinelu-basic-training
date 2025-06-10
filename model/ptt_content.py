@@ -31,7 +31,7 @@ class Post(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(255), nullable=False)
     content = Column(LONGTEXT)
-    created_at = Column(DateTime, default=datetime_now)
+    post_created_time = Column(DateTime)
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     board_id = Column(Integer, ForeignKey('boards.id'), nullable=False)
 
@@ -40,7 +40,7 @@ class Post(Base):
     comments = relationship('Comment', back_populates='post')
 
     __table_args__ = (
-        UniqueConstraint('title', 'author_id', 'created_at', name='uq_title_author_created_at'),
+        UniqueConstraint('title', 'author_id', 'post_created_time', name='uq_title_author_created_time'),
     )
 
 

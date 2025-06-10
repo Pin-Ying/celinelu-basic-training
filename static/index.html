@@ -137,7 +137,7 @@
                         ${post.board.name}
                     </div>
                     <div>
-                        ${post.created_at}
+                        ${post.post_created_time}
                     </div>
                     <div>
                         <button type="button" onclick="getOnePostData(${post.id})">詳細內文</button>
@@ -163,7 +163,7 @@
                                         <input type="text" name="author_name" value="${post.author.name}"/>
                                         <textarea name="content" >${post.content}</textarea>
                                         <input type="text" name="board_name" value="${post.board.name}"/>
-                                        <input type="datetime-local" name="created_at" value="${post.created_at}"/>
+                                        <input type="datetime-local" name="post_created_time" value="${post.post_created_time}"/>
                                         <div class="grid" style="width: 100%; grid-template-columns: repeat(3, 1fr);">
                                             <button type="button" onclick="updatePost(${post.id})">修改</button>
                                             <button type="button" onclick="deletePost(${post.id})">刪除</button>
@@ -288,7 +288,7 @@
         let jsonData = {
             title: formData.get("title"),
             content: formData.get("content"),
-            created_at: formData.get("created_at"),
+            post_created_time: formData.get("post_created_time"),
             author: {
                 name: formData.get("author_name")
             },

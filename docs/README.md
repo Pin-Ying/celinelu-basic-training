@@ -47,10 +47,8 @@
 #### 專案呈現
 
 - Tasks (爬蟲與排程)
-  - PttCrawler 類別 => 進行某個 Board 的文章爬取與資料庫儲存
-    - crawl() => 爬取文章列表 -> 收集文章列表得到的文章a標籤，依序爬取單篇文章 -> 將爬取的文章收集，並從上頁按鈕進行下一頁的爬取 
-      - 結束爬取條件：1.當單篇文章與前次最新的文章相同(前次終斷點)、2.批次抓取的文章中包含日期比 cutoff_date 舊的文章(沒有斷點文章時)
-    - save_posts_from_postcrawls() => 將收集的文章存入資料庫
+  - PttCrawler
+  > ![ptt-crawl.png](drawio-pic/ptt-crawl.png)
 
   - Celery
     - Broker: Redis

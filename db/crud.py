@@ -38,14 +38,14 @@ def get_existing_user_map(db: Session):
 
 # --- Post ---
 def get_latest_post(db: Session, board: int):
-    return db.query(Post).filter_by(board_id=board).order_by(Post.created_at.desc()).first()
+    return db.query(Post).filter_by(board_id=board).order_by(Post.post_created_time.desc()).first()
 
 
 def get_or_create_post(db: Session, post_input: Post):
     post = db.query(Post).filter_by(
         title=post_input.title,
         author_id=post_input.author_id,
-        created_at=post_input.created_at
+        post_created_time=post_input.post_created_time
     ).first()
     if post:
         return post
@@ -67,7 +67,7 @@ def update_post_from_id(db: Session, post_id, post_schema: PostSchema):
         return None
     target_post.title = post_schema.title
     target_post.content = post_schema.content
-    target_post.created_at = post_schema.created_at
+    target_post.post_created_time = post_schema.post_created_time
     target_post.author = author
     target_post.board = board
     try:
@@ -91,7 +91,7 @@ def delete_post_from_id(db: Session, post_id):
             content=target_post.content,
             author=target_post.author,
             board=target_post.board,
-            created_at=target_post.created_at)
+            post_created_time=target_post.post_created_time)
         db.delete(target_post)
         db.commit()
         return post_copy
@@ -115,12 +115,12 @@ def get_query_by_post_search(db: Session, post_search: PostSearch):
         filters.append(Board.name == post_search.board.name)
 
     if post_search.start_datetime:
-        filters.append(Post.created_at >= post_search.start_datetime)
+        filters.append(Post.post_created_time >= post_search.start_datetime)
 
     if post_search.end_datetime:
-        filters.append(Post.created_at <= post_search.end_datetime)
+        filters.append(Post.post_created_time <= post_search.end_datetime)
 
-    return query.filter(*filters).order_by(Post.created_at.desc())
+    return query.filter(*filters).order_by(Post.post_created_time.desc())
 
 
 def get_posts_by_search(db: Session, post_search: PostSearch, posts_limit=50, posts_offset=0):

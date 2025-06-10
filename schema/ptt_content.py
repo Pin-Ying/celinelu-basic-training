@@ -19,7 +19,7 @@ class PostCrawl(BaseModel):
     content: str
     author: str
     board_id: int
-    created_at: datetime
+    post_created_time: datetime
     comments: Optional[List[CommentCrawl]]
 
     class Config:
@@ -54,7 +54,7 @@ class PostSchema(BaseModel):
     id: Optional[int] = None
     title: Optional[str] = None
     content: Optional[str] = None
-    created_at: Optional[datetime] = None
+    post_created_time: Optional[datetime] = None
     author: Optional['UserSchema'] = None
     board: Optional['BoardSchema'] = None
 

@@ -24,7 +24,7 @@ def dummy_postschema(dummy_commentschema):
         id=None,
         title="test_post_schema",
         content="test_content",
-        created_at=datetime.now(),
+        post_created_time=datetime.now(),
         board=BoardSchema(name="test_board"),
         author=UserSchema(name="test_author"),
         comments=[dummy_commentschema]
@@ -45,7 +45,7 @@ def dummy_postcrawl(dummy_commentcrawl):
     return PostCrawl(
         title="test_post_crawl",
         content="test_content",
-        created_at=datetime.now(),
+        post_created_time=datetime.now(),
         board_id=1,
         author="test_user",
         comments=[dummy_commentcrawl]
@@ -86,7 +86,7 @@ def dummy_model_post(dummy_model_user, dummy_model_board, dummy_model_comment):
         id=1,
         title="test_post",
         content="test_content",
-        created_at=datetime(2025, 5, 27, 12, 0, 0),
+        post_created_time=datetime(2025, 5, 27, 12, 0, 0),
         author=dummy_model_user,
         board=dummy_model_board,
         comments=[dummy_model_comment]

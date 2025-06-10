@@ -116,7 +116,7 @@ def test_crawl_with_inline_html(db, dummy_model_board):
     for post in posts:
         assert post.author == "Tester"
         assert post.title == "Test Title"
-        assert post.created_at == datetime.strptime("Fri May 23 12:00:00 2025", "%a %b %d %H:%M:%S %Y")
+        assert post.post_created_time == datetime.strptime("Fri May 23 12:00:00 2025", "%a %b %d %H:%M:%S %Y")
 
 
 @patch("tasks.ptt_crawl.get_or_create_user")

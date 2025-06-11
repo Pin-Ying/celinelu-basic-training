@@ -35,6 +35,8 @@ docker logs <container>
 --- Docker Compose ---
 專案容器管理 => 當一個專案由多個容器進行開發，可藉由 docker-compose 進行各容器的管理
 
+docker compose config --environment
+
 建立專案
 docker compose build
 

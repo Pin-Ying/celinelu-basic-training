@@ -23,9 +23,6 @@
       - tasks
         - celery_tasks.py
         - ptt_crawl.py
-      - tests
-        - test_crud.py
-        - test_ptt_crawl.py
       - main.py
 
 - 資料表設計
@@ -44,19 +41,18 @@
 #### 專案呈現
 
 - Tasks (爬蟲與排程)
-  - PttCrawler
-  > ![ptt-crawl.png](drawio-pic/ptt-crawl.png)
-
   - Celery
     - Broker: Redis
     - celery beat => 設定每小時一次的 "crawl-ptt-every-hour" schedule
-  > ![celery-tasks.png](drawio-pic/celery-tasks.png)
-  
+  > ![celery-tasks.png](drawio-pic/celery-tasks.png)- 
+  - PttCrawler
+  > ![ptt-crawl.png](drawio-pic/ptt-crawl.png)
   - log
   > ![celery-log.png](img/celery-log.png)
 
 - API
   > ![api.png](img/api.png)
+  > ![ptt-api.png](drawio-pic/ptt-api.png)
 - 前端
   > ![ptt-web-frontend.png](img/ptt-web-frontend.png)
   > ![ptt-web-frontend-2.png](img/ptt-web-frontend-2.png)

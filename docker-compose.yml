@@ -11,10 +11,10 @@ services:
     container_name: mariadb
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpass123456
-      MYSQL_DATABASE: ptt_db
-      MYSQL_USER: test
-      MYSQL_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
@@ -23,15 +23,14 @@ services:
 
   web:
     build: .
+    env_file:
+      - .env
     container_name: web
     volumes:
       - .:/app
     depends_on:
       - redis
       - mariadb
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - DATABASE_URL=mysql+pymysql://test:123456@mariadb:3306/ptt_db
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
@@ -44,21 +43,16 @@ services:
     depends_on:
       - redis
       - web
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1
-      - DATABASE_URL=mysql+pymysql://test:123456@mariadb:3306/ptt_db
     command: celery -A tasks.celery_tasks worker --loglevel=info
 
   celery_beat:
     build: .
+    env_file:
+      - .env
     container_name: celery_beat
     depends_on:
       - redis
       - web
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - DATABASE_URL=mysql+pymysql://test:123456@mariadb:3306/ptt_db
     command: celery -A tasks.celery_tasks beat --loglevel=info
 
 volumes:

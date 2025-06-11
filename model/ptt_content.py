@@ -10,8 +10,6 @@ from db.database import Base
 tz = pytz.timezone("Asia/Taipei")
 datetime_now = lambda: datetime.now(tz)
 
-# ToDo: Comment 改欄位了!!!
-
 
 class User(Base):
     __tablename__ = 'users'
@@ -36,6 +34,7 @@ class Post(Base):
     post_created_time = Column(DateTime)
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     board_id = Column(Integer, ForeignKey('boards.id'), nullable=False)
+    created_at = Column(DateTime, default=datetime_now)
 
     author = relationship('User', back_populates='posts')
     board = relationship('Board', back_populates='posts')

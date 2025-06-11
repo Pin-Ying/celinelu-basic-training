@@ -41,14 +41,12 @@
 #### 專案呈現
 
 - Tasks (爬蟲與排程)
+  - 目標：PTT五個版面的一年份資料，並每小時爬取新資料
   - Celery
-    - Broker: Redis
     - celery beat => 設定每小時一次的 "crawl-ptt-every-hour" schedule
   > ![celery-tasks.png](drawio-pic/celery-tasks.png)- 
   - PttCrawler
   > ![ptt-crawl.png](drawio-pic/ptt-crawl.png)
-  - log
-  > ![celery-log.png](img/celery-log.png)
 
 - API
   > ![api.png](img/api.png)

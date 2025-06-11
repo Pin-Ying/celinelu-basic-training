@@ -50,8 +50,8 @@ docker compose down -v
 
 docker exec -it <container_name> bash => 進入指定的容器
 
-Dockerfile => APP 運行的環境
-docker-compose.yml => 組成該APP的各項服務
+Dockerfile => APP 藍圖(image)
+docker-compose.yml => 最終服務所需的各項 APP
 
 # 將 image 丟到 dockerhub
 docker tag local-image:tagname new-repo:tagname

@@ -34,8 +34,6 @@
   > ![Flow.png](drawio-pic/Flow.png)
 - 規劃時程表
   > ![schedule.png](img/schedule.png)
-- 部屬方式
-  - docker-compose
 
 
 #### 專案呈現
@@ -49,11 +47,13 @@
   > ![ptt-crawl.png](drawio-pic/ptt-crawl.png)
 
 - API
+  - 目標：提供使用者方便操作ptt資料庫的服務
   > ![api.png](img/api.png)
   > ![ptt-api.png](drawio-pic/ptt-api.png)
 - 前端
   > ![ptt-web-frontend.png](img/ptt-web-frontend.png)
   > ![ptt-web-frontend-2.png](img/ptt-web-frontend-2.png)
 - 部屬
+  - docker-compose => 管理專案所使用到的各項服務(images -> containers)，方便轉移專案時能夠快速地再次建立相同的環境
   > ![deploy.png](drawio-pic/deploy.png)
 

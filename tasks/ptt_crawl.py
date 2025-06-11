@@ -84,7 +84,7 @@ class PttCrawler:
                     post_data["comments"].append({
                         "user": spans[1].text.strip(),
                         "content": spans[2].text.strip(': '),
-                        "created_at": spans[3].text.strip()
+                        "comment_created_time": spans[3].text.strip()
                     })
 
             return PostCrawl(**post_data)
@@ -174,7 +174,7 @@ class PttCrawler:
             seen_comments = set(existing_comment_keys)
 
             for comment in comments_inputs:
-                comment_key = (comment.user, comment.content, comment.created_at)
+                comment_key = (comment.user, comment.content, comment.comment_created_time)
                 if comment_key in seen_comments:
                     continue
                 seen_comments.add(comment_key)
@@ -188,7 +188,7 @@ class PttCrawler:
                     post_id=post_id,
                     user_id=comment_user.id,
                     content=comment.content,
-                    created_at=comment.created_at
+                    comment_created_time=comment.comment_created_time
                 )
                 new_comments.append(new_comment)
 

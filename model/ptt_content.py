@@ -34,7 +34,6 @@ class Post(Base):
     title = Column(String(255), nullable=False)
     content = Column(LONGTEXT)
     post_created_time = Column(DateTime)
-    created_at = Column(DateTime, default=datetime_now)
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     board_id = Column(Integer, ForeignKey('boards.id'), nullable=False)
 
@@ -51,7 +50,7 @@ class Comment(Base):
     __tablename__ = 'comments'
     id = Column(Integer, primary_key=True, autoincrement=True)
     content = Column(Text)
-    created_at = Column(Text)
+    comment_created_time = Column(Text)
     post_id = Column(Integer, ForeignKey('posts.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
@@ -59,7 +58,7 @@ class Comment(Base):
     user = relationship('User', back_populates='comments')
 
     __table_args__ = (
-        UniqueConstraint('post_id', 'user_id', 'content', 'created_at', name='uq_post_author_created_at'),
+        UniqueConstraint('post_id', 'user_id', 'content', 'comment_created_time', name='uq_post_author_created_time'),
     )
 
 

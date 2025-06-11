@@ -142,7 +142,7 @@ def get_or_create_comment(db: Session, comment_input: Comment):
         post_id=comment_input.post_id,
         user_id=comment_input.user_id,
         content=comment_input.content,
-        created_at=comment_input.created_at
+        comment_created_time=comment_input.comment_created_time
     ).first()
     if comment:
         return comment
@@ -164,7 +164,7 @@ def get_existing_comments_keys_list(db: Session, post_id: int) -> List:
         .all()
     )
     if comments:
-        return [(comment.user.name, comment.content, comment.created_at) for comment in comments]
+        return [(comment.user.name, comment.content, comment.comment_created_time) for comment in comments]
     return []
 
 

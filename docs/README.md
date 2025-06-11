@@ -57,13 +57,5 @@
   > ![ptt-web-frontend.png](img/ptt-web-frontend.png)
   > ![ptt-web-frontend-2.png](img/ptt-web-frontend-2.png)
 - 部屬
-  - docker-compose.yml
-    - redis: celery broker、celery result backend
-    - mariadb: database
-    - images build by Dockerfile
-      - web: web server(FastAPI + uvicorn)
-      - celery_worker: run tasks
-      - celery_beat: schedule tasks
-  - Dockerfile
-    - 使用 Poetry 建立環境
+  > ![deploy.png](drawio-pic/deploy.png)
 

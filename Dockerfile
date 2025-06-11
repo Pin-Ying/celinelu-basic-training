@@ -11,7 +11,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && \
 
 # 設定環境變數
 # ENV POETRY_VIRTUALENVS_CREATE=false => Poetry 不自動建立虛擬環境(容器中不需要)
-# ENV PYTHONUNBUFFERED=1 => Python 的 log 輸出不使用緩衝區，即時輸出 log
+# ENV PYTHONUNBUFFERED=1 => Python 的 log 輸出不使用記憶體緩衝區，即時輸出 log
 # ENV PYTHONDONTWRITEBYTECODE=1 => 不要寫入 .pyc 檔案（Python 執行暫存檔）
 ENV POETRY_VIRTUALENVS_CREATE=false \
     PYTHONUNBUFFERED=1 \

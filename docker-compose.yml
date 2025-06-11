@@ -23,6 +23,7 @@ services:
 
   web:
     build: .
+    image: ptt-app:latest
     env_file:
       - .env
     container_name: web
@@ -36,7 +37,7 @@ services:
       - "8000:8000"
 
   celery_worker:
-    build: .
+    image: ptt-app:latest
     env_file:
       - .env
     container_name: celery_worker
@@ -46,7 +47,7 @@ services:
     command: celery -A tasks.celery_tasks worker --loglevel=info
 
   celery_beat:
-    build: .
+    image: ptt-app:latest
     env_file:
       - .env
     container_name: celery_beat

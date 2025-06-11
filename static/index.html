@@ -73,19 +73,6 @@
 <script>
     const api_url = "http://localhost:8000/api";
 
-    function getAPIUrl() {
-        fetch("/api_url", {method: 'GET'})
-        .then(res => checkStatusCode(res))
-        .then(result => {
-            return result
-        })
-        return ""
-
-    }
-
-    const test = getAPIUrl();
-    console.log(test)
-
     function reload(msg = "完成！") {
         alert(msg);
         location.reload();

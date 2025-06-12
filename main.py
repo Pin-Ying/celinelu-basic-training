@@ -1,13 +1,9 @@
 import os
 
-# import httpx
 import pytz
-# from dotenv import load_dotenv
-from fastapi import FastAPI  # , Body, Request
-# from fastapi.encoders import jsonable_encoder
+from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-# from starlette.responses import JSONResponse
 
 from api import ptt
 from dotenv import load_dotenv

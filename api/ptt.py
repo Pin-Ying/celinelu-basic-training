@@ -138,6 +138,8 @@ async def add_post(post_schema: PostSchema = Body(...), db=Depends(get_db)):
     try:
         author = get_or_create_user(db, post_schema.author.name)
         board = get_or_create_board(db, post_schema.board.name)
+        if post_schema.post_created_time is None:
+            post_schema.post_created_time = datetime.now()
         new_post = Post(
             title=post_schema.title,
             content=post_schema.content,

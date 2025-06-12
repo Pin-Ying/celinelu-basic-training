@@ -24,11 +24,10 @@ body {
 
 .grid-cols-5 > * {
     padding: 0.5rem;
-    background-color: white;
     word-break: break-word;
 }
 
-.grid-cols-5 > *:hover {
+.grid-cols-5:hover {
     background-color: #f9f9f9;
 }
 

@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from bs4 import BeautifulSoup
 
+from model.ptt_content import Comment, Post
 from tasks.ptt_crawl import PttCrawler
 
 # 模擬文章 HTML
@@ -119,46 +120,26 @@ def test_crawl_with_inline_html(db, dummy_model_board):
         assert post.post_created_time == datetime.strptime("Fri May 23 12:00:00 2025", "%a %b %d %H:%M:%S %Y")
 
 
-@patch("tasks.ptt_crawl.get_or_create_user")
-@patch("tasks.ptt_crawl.get_or_create_post")
-def test_save_single_post(
-        mock_get_post,
-        mock_get_user,
-        db, dummy_model_board, dummy_postcrawl, dummy_model_user, dummy_model_post
-):
-    mock_get_user.return_value = dummy_model_user
-    mock_get_post.return_value = dummy_model_post
-
-    crawler = PttCrawler(db, dummy_model_board.name, dummy_model_board.id)
+def test_save_single_post(sqlite_db, dummy_model_board, dummy_postcrawl):
+    crawler = PttCrawler(sqlite_db, dummy_model_board.name, dummy_model_board.id)
     post = crawler.save_single_post(dummy_postcrawl)
 
-    assert post == dummy_model_post
+    assert post.title == dummy_postcrawl.title
+    assert post.author.name == dummy_postcrawl.author
 
 
-@patch("tasks.ptt_crawl.create_comments_bulk")
-@patch("tasks.ptt_crawl.get_or_create_user")
-@patch("tasks.ptt_crawl.get_existing_comments_keys_list")
-def test_save_comments_bulk(
-        mock_get_comment_keys,
-        mock_get_user,
-        mock_create_comments_bulk,
-        db, dummy_model_board, dummy_commentcrawl, dummy_model_comment, dummy_model_post, dummy_model_user
-):
-    mock_get_comment_keys.return_value = []
-    mock_get_user.return_value = dummy_model_user
-    mock_create_comments_bulk.return_value = [dummy_model_comment]
-
-    crawler = PttCrawler(db, dummy_model_board.name, dummy_model_board.id)
+def test_save_comments_bulk(sqlite_db, dummy_model_board, dummy_commentcrawl, dummy_model_comment, dummy_model_post):
+    crawler = PttCrawler(sqlite_db, dummy_model_board.name, dummy_model_board.id)
     comments = crawler.save_comments_bulk([dummy_commentcrawl], dummy_model_post.id)
 
-    assert comments == [dummy_model_comment]
+    assert comments[0].content == dummy_model_comment.content
+    assert comments[0].post_id == dummy_model_post.id
 
 
-def test_save_post_from_postcrawls(db, dummy_model_board, dummy_postcrawl, dummy_model_post, dummy_model_comment):
-    crawler = PttCrawler(db, dummy_model_board.name, dummy_model_board.id)
-    crawler.save_single_post = MagicMock(return_value=dummy_model_post)
-    crawler.save_comments_bulk = MagicMock(return_value=[dummy_model_comment])
+def test_save_post_from_postcrawls(sqlite_db, dummy_model_board, dummy_postcrawl):
+    crawler = PttCrawler(sqlite_db, dummy_model_board.name, dummy_model_board.id)
     post_finish, post_exceptions = crawler.save_posts_from_postcrawls([dummy_postcrawl])
 
-    assert crawler.save_comments_bulk.called
-    assert post_finish == [dummy_model_post]
+    assert post_finish[0].title == dummy_postcrawl.title
+    assert len(sqlite_db.query(Post).all()) == 1
+    assert len(sqlite_db.query(Comment).all()) == 1

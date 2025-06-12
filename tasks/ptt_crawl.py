@@ -169,16 +169,18 @@ class PttCrawler:
     def save_comments_bulk(self, comments_inputs: List[CommentCrawl], post_id: int):
         try:
             new_comments = []
-            # 該文章已經存在的留言
+            # 該文章已經存入的留言
             existing_comment_keys = get_existing_comments_keys_list(self.db, post_id)
             seen_comments = set(existing_comment_keys)
 
             for comment in comments_inputs:
+                # 若留言已經存過就跳過後續處理
                 comment_key = (comment.user, comment.content, comment.comment_created_time)
                 if comment_key in seen_comments:
                     continue
                 seen_comments.add(comment_key)
 
+                # 取得留言者
                 comment_user = self.user_map.get(comment.user) if self.user_map else None
                 if comment_user is None:
                     comment_user = get_or_create_user(self.db, comment.user)
@@ -205,7 +207,7 @@ class PttCrawler:
             post_exception_msgs = []
             for post_input in post_inputs:
                 try:
-                    # 將文章先加入資料庫
+                    # 將文章加入資料庫
                     post_result = self.save_single_post(post_input)
 
                     # 若該文章有留言，加入資料庫

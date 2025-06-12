@@ -1,6 +1,6 @@
 FROM python:3.13-slim
 
-# 安裝系統工具與 curl（安裝 poetry 用）
+# 安裝系統工具 -> 安裝 curl（後續安裝 poetry 用）
 RUN apt-get update && apt-get install -y curl build-essential \
     && rm -rf /var/lib/apt/lists/*
 
@@ -24,7 +24,7 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock* ./
 RUN poetry install --no-root
 
-# 複製當前目錄的所有檔案到容器的 /app
+# 複製當前專案目錄(.)的所有檔案到工作目錄(. => /app)
 COPY . .
 
 # 移除 Poetry
